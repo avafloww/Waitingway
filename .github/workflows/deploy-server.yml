@@ -15,15 +15,13 @@ jobs:
         dotnet-version: '6.0.x'
     - name: dotnet publish
       run: dotnet publish XivqServer -c Release -o deploy -r linux-x64
-    - name: ssh deploy
-      uses: easingthemes/ssh-deploy@v2.2.11
-      with:
-        SSH_PRIVATE_KEY: ${{ secrets.REMOTE_SSH_KEY }}
-        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
-        REMOTE_USER: ${{ secrets.REMOTE_USER }}
-        ARGS: '-avzr --delete'
-        SOURCE: 'deploy/'
-        TARGET: '/var/www/xivq/'
+    - name: SCP Command to Transfer Files
+      uses: appleboy/scp-action@v0.1.2
+      host: ${{ secrets.REMOTE_HOST }}
+      username: ${{ secrets.REMOTE_USER }}
+      key: ${{ secrets.REMOTE_SSH_KEY }}
+      source: 'deploy/'
+      target: '/var/www/xivq/'
     - name: SSH Remote Commands
       uses: appleboy/ssh-action@v0.1.4
       with:
