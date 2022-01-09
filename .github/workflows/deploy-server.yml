@@ -22,7 +22,7 @@ jobs:
         username: ${{ secrets.REMOTE_USER }}
         key: ${{ secrets.REMOTE_SSH_KEY }}
         source: 'deploy/'
-        target: '/var/www/xivq/'
+        target: '/var/www/xivq'
     - name: SSH Remote Commands
       uses: appleboy/ssh-action@v0.1.4
       with:
