@@ -17,11 +17,12 @@ jobs:
       run: dotnet publish XivqServer -c Release -o deploy -r linux-x64
     - name: SCP Command to Transfer Files
       uses: appleboy/scp-action@v0.1.2
-      host: ${{ secrets.REMOTE_HOST }}
-      username: ${{ secrets.REMOTE_USER }}
-      key: ${{ secrets.REMOTE_SSH_KEY }}
-      source: 'deploy/'
-      target: '/var/www/xivq/'
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.REMOTE_SSH_KEY }}
+        source: 'deploy/'
+        target: '/var/www/xivq/'
     - name: SSH Remote Commands
       uses: appleboy/ssh-action@v0.1.4
       with:
