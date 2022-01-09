@@ -1,0 +1,33 @@
+name: Deploy XivqServer
+on: 
+  push:
+    branches:
+    - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.x'
+    - name: dotnet publish
+      run: dotnet publish XivqServer -c Release -o deploy -r linux-x64
+    - name: ssh deploy
+      uses: easingthemes/ssh-deploy@v2.2.11
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.REMOTE_SSH_KEY }}
+        REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+        REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        ARGS: '-avzr --delete'
+        SOURCE: 'deploy/'
+        TARGET: '/var/www/xivq/'
+    - name: SSH Remote Commands
+      uses: appleboy/ssh-action@v0.1.4
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.REMOTE_SSH_KEY }}
+        script: sudo /usr/sbin/xivq-deploy
