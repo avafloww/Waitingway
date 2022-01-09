@@ -6,6 +6,6 @@ builder.Services.AddScoped<XivqHub>();
 builder.Services.AddScoped<ClientManager>();
 var app = builder.Build();
 
-app.MapHub<XivqHub>("");
+app.MapHub<XivqHub>("/ws");
 
 app.Run();
