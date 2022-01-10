@@ -55,7 +55,7 @@ public class Plugin : IDalamudPlugin
         _config.Initialize(PluginInterface);
         PluginLog.Log($"Waitingway Client ID: {_config.ClientId}");
 
-        _client = new WaitingwayClient("http://localhost:5053", _config.ClientId);
+        _client = new WaitingwayClient(_config.RemoteServer, _config.ClientId);
 
         var lobbyStatusAddr = SigScanner.ScanText(
             "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B 41 10 48 8D 7A 10");
