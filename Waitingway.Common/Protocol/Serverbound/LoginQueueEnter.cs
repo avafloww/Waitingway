@@ -13,13 +13,13 @@ public class LoginQueueEnter : IPacket
     {
     }
 
-    public LoginQueueEnter(string clientId, ulong characterId, ushort datacenterId, ushort worldId)
+    public LoginQueueEnter(string clientId, ulong characterId, string clientSalt, ushort datacenterId, ushort worldId)
     {
         // Generate a deterministic session ID based on the client and character ID
         // This is only for tracking crashes/disconnects in queue as one session; we don't care about the actual character
         using (var sha = SHA256.Create())
         {
-            var data = $"Waitingway|Client={clientId}|Character={characterId:X}";
+            var data = $"Waitingway|Client={clientId}|Character={characterId:X}|Salt={clientSalt}";
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(data));
             var builder = new StringBuilder();
             foreach (var b in bytes)

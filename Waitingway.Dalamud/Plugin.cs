@@ -103,7 +103,7 @@ public class Plugin : IDalamudPlugin
             if (_selectedCharacterId > 0 && GameGui.GetAddonByName("_CharaSelectListMenu", 1) == IntPtr.Zero)
             {
                 _currentLoginStartTime = DateTime.Now;
-                _client.Send(new LoginQueueEnter(_config.ClientId, _selectedCharacterId, _selectedDataCenter, _selectedWorld));
+                _client.Send(new LoginQueueEnter(_config.ClientId, _selectedCharacterId, _config.ClientSalt, _selectedDataCenter, _selectedWorld));
                 PluginLog.Log(
                     $"Login attempt started at {_currentLoginStartTime} with character {_selectedCharacterId:X} on data center {_selectedDataCenter} and world {_selectedWorld}");
             }
