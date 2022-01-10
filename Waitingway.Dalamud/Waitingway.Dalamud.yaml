@@ -1,0 +1,6 @@
+name: Waitingway
+author: Avaflow
+punchline: Crowdsourced FFXIV login queue times.
+description: |-
+  Contributes and utilizes crowdsourced login queue information to provide an estimate of your wait time.
+repo_url: https://waitingway.com
