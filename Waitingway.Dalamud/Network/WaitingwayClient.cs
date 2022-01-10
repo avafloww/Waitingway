@@ -26,6 +26,7 @@ public class WaitingwayClient : IAsyncDisposable
 
         Task.Run(async () =>
         {
+            PluginLog.Log($"Attempting to connect to remote server at {serverUrl}.");
             await _connection.StartAsync();
             PluginLog.Log("Connected to server.");
             await SendHello();
