@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Gui;
@@ -49,15 +50,16 @@ public class Plugin : IDalamudPlugin
 
     private delegate IntPtr OnLobbyErrorCode(IntPtr a1, IntPtr a2);
 
+    [SuppressMessage("ReSharper", "ExpressionIsAlwaysNull")]
     public Plugin()
     {
-        _config = (Configuration) PluginInterface.GetPluginConfig() ?? new Configuration();
+        _config = PluginInterface!.GetPluginConfig() as Configuration ?? new Configuration();
         _config.Initialize(PluginInterface);
         PluginLog.Log($"Waitingway Client ID: {_config.ClientId}");
 
         _client = new WaitingwayClient(_config.RemoteServer, _config.ClientId);
 
-        var lobbyStatusAddr = SigScanner.ScanText(
+        var lobbyStatusAddr = SigScanner!.ScanText(
             "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B 41 10 48 8D 7A 10");
         PluginLog.Log($"Found LobbyStatus address: {lobbyStatusAddr.ToInt64():X}");
         _lobbyStatusHook =

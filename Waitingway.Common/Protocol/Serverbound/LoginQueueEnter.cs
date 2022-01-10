@@ -33,4 +33,9 @@ public class LoginQueueEnter : IPacket
         DatacenterId = datacenterId;
         WorldId = worldId;
     }
+
+    public override string ToString()
+    {
+        return $"{nameof(SessionId)}: {SessionId}, {nameof(DatacenterId)}: {DatacenterId}, {nameof(WorldId)}: {WorldId}";
+    }
 }

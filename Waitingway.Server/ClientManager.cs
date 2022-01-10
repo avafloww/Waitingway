@@ -2,83 +2,88 @@
 
 public class ClientManager
 {
-    private readonly Object _lock = new();
+    private static readonly Object Lock = new();
 
     // client id -> connection id
-    private readonly Dictionary<string, string> _clientToConnection = new();
+    private static readonly Dictionary<string, string> ClientToConnection = new();
 
     // connection id -> client id
-    private readonly Dictionary<string, string> _connectionToClient = new();
+    private static readonly Dictionary<string, string> ConnectionToClient = new();
 
-    private readonly Dictionary<string, Client> _clients = new();
+    private static readonly Dictionary<string, Client> Clients = new();
 
-    public int Count
+    public int ActiveCount
     {
-        get => _clientToConnection.Count;
+        get => ClientToConnection.Count;
+    }
+
+    public int TotalCount
+    {
+        get => Clients.Count;
     }
 
     public void Add(string connectionId, Client client)
     {
-        lock (_lock)
+        lock (Lock)
         {
             string? existingConnection;
-            if (_clientToConnection.TryGetValue(client.Id, out existingConnection))
+            if (ClientToConnection.TryGetValue(client.Id, out existingConnection))
             {
                 // todo: disconnect existing client existingConnection
-                _clientToConnection.Remove(client.Id);
+                ClientToConnection.Remove(client.Id);
             }
 
-            _clientToConnection[client.Id] = connectionId;
-            _connectionToClient[connectionId] = client.Id;
-            _clients[client.Id] = client;
+            ClientToConnection[client.Id] = connectionId;
+            ConnectionToClient[connectionId] = client.Id;
+            Clients[client.Id] = client;
         }
     }
 
     public void Remove(string connectionId)
     {
-        lock (_lock)
+        lock (Lock)
         {
             string? clientId;
-            if (!_connectionToClient.TryGetValue(connectionId, out clientId))
+            if (!ConnectionToClient.TryGetValue(connectionId, out clientId))
             {
                 return;
             }
 
-            _clients.Remove(clientId);
-            _clientToConnection.Remove(clientId);
-            _connectionToClient.Remove(connectionId);
+            Clients.Remove(clientId);
+            ClientToConnection.Remove(clientId);
+            ConnectionToClient.Remove(connectionId);
         }
     }
 
     public Client GetClient(string id)
     {
-        lock (_lock)
+        lock (Lock)
         {
-            return _clients[id];
+            return Clients[id];
         }
     }
 
     public Client GetClientForConnection(string connectionId)
     {
-        lock (_lock)
+        lock (Lock)
         {
-            return _clients[_connectionToClient[connectionId]];
+            return Clients[ConnectionToClient[connectionId]];
         }
     }
 
     public string GetClientIdForConnection(string connectionId)
     {
-        lock (_lock)
+        lock (Lock)
         {
-            return _connectionToClient[connectionId];
+            return ConnectionToClient[connectionId];
         }
     }
 
     public string GetConnectionIdForClient(string clientId)
     {
-        lock (_lock)
+        lock (Lock)
         {
-            return _clientToConnection[clientId];
+            return ClientToConnection[clientId];
         }
     }
 }

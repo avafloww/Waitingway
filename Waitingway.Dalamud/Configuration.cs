@@ -7,9 +7,9 @@ namespace Waitingway.Dalamud;
 
 public class Configuration : IPluginConfiguration
 {
-    public string RemoteServer { get; } = "https://etheirys.waitingway.com";
-    public string ClientId { get; } = Guid.NewGuid().ToString();
-    public int Version { get; set; }
+    public string RemoteServer { get; init; } = "https://etheirys.waitingway.com";
+    public string ClientId { get; init; } = Guid.NewGuid().ToString();
+    public int Version { get; set; } = 1;
 
     [JsonIgnore] private DalamudPluginInterface pluginInterface;
 

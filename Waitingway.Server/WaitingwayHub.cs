@@ -52,20 +52,31 @@ public class WaitingwayHub : Hub
             // todo: special behavior for resume
         }
 
+        _logger.LogDebug("[{}] LoginQueueEnter: {}", client.Id, packet);
         client.Queue = new ClientQueue {QueuePosition = 0};
     }
 
     public void QueueExit(QueueExit packet)
     {
         var client = _manager.GetClientForConnection(Context.ConnectionId);
-        Debug.Assert(client.Queue != null, "client.Queue != null");
+        if (client.Queue == null)
+        {
+            throw new HubException("Client is not actively in a queue");
+        }
+        
+        _logger.LogDebug("[{}] QueueExit: {}", client.Id, packet);
         client.Queue = null;
     }
 
     public void QueueStatusUpdate(QueueStatusUpdate packet)
     {
         var client = _manager.GetClientForConnection(Context.ConnectionId);
-        Debug.Assert(client.Queue != null, "client.Queue != null");
+        if (client.Queue == null)
+        {
+            throw new HubException("Client is not actively in a queue");
+        }
+        
+        _logger.LogDebug("[{}] QueueStatusUpdate: {}", client.Id, packet);
         client.Queue.QueuePosition = packet.QueuePosition;
     }
 
