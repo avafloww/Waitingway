@@ -12,12 +12,14 @@ public class Configuration : IPluginConfiguration
     public string ClientSalt { get; init; } = Guid.NewGuid().ToString().Split('-')[0];
     public int Version { get; set; } = 1;
 
+#pragma warning disable CS8618
     [JsonIgnore] private DalamudPluginInterface pluginInterface;
 
     public void Initialize(DalamudPluginInterface pluginInterface)
     {
         this.pluginInterface = pluginInterface;
     }
+#pragma warning restore CS8618
 
     public void Save()
     {

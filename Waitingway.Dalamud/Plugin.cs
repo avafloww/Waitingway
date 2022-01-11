@@ -9,7 +9,6 @@ using Dalamud.Logging;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using ImGuiScene;
 using Waitingway.Dalamud.Network;
 using Waitingway.Common.Protocol.Serverbound;
 
@@ -37,7 +36,7 @@ public class Plugin : IDalamudPlugin
 
     [PluginService]
     [RequiredVersion("1.0")]
-    private GameGui GameGui { get; init; }
+    internal GameGui GameGui { get; init; }
 
     private readonly Configuration _config;
 
@@ -47,22 +46,28 @@ public class Plugin : IDalamudPlugin
     private DateTime? _currentLoginStartTime;
 
     private Hook<OnLobbyErrorCode> _lobbyStatusHook;
+    private Hook<OnSelectYesNoEvent> _selectYesNoHook;
 
-    private PluginUi _ui;
-    private WaitingwayClient _client;
+    internal readonly PluginUi Ui;
+    internal readonly WaitingwayClient Client;
 
     private delegate IntPtr OnLobbyErrorCode(IntPtr a1, IntPtr a2);
 
+    private delegate IntPtr OnSelectYesNoEvent(IntPtr atkUnit, ushort eventType, int which, IntPtr source, IntPtr data);
+
     [SuppressMessage("ReSharper", "ExpressionIsAlwaysNull")]
+#pragma warning disable CS8618
+#pragma warning disable CS8602
     public Plugin()
     {
         _config = PluginInterface!.GetPluginConfig() as Configuration ?? new Configuration();
         _config.Initialize(PluginInterface);
         PluginLog.Log($"Waitingway Client ID: {_config.ClientId}");
 
-        _ui = new PluginUi(this);
-        
-        _client = new WaitingwayClient(_config.RemoteServer, _config.ClientId);
+        Ui = new PluginUi(this);
+
+        Client = new WaitingwayClient(this, _config.RemoteServer, _config.ClientId, PluginInterface.UiLanguage);
+        PluginInterface.LanguageChanged += Client.LanguageChanged;
 
         var lobbyStatusAddr = SigScanner!.ScanText(
             "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B 41 10 48 8D 7A 10");
@@ -71,17 +76,25 @@ public class Plugin : IDalamudPlugin
             new Hook<OnLobbyErrorCode>(lobbyStatusAddr, LobbyStatusUpdateDetour);
         _lobbyStatusHook.Enable();
 
+        var selectYesNoEventAddr =
+            SigScanner!.ScanText("40 ?? 55 57 48 81 ?? ?? ?? ?? ?? 48 8B ?? ?? ?? ?? ?? 48 33 ?? ?? 89 ?? ?? ?? 0F B7");
+        PluginLog.Log($"Found SelectYesNoReceiveEvent address: {selectYesNoEventAddr.ToInt64():X}");
+        _selectYesNoHook = new Hook<OnSelectYesNoEvent>(selectYesNoEventAddr, SelectYesNoEventDetour);
+        // don't enable here, we only enable it while the SelectYesno we want to watch is on screen
+
         ClientState.Login += HandleLogin;
         ClientState.Logout += HandleLogout;
 
         Framework.Update += OnFrameworkUpdate;
     }
+#pragma warning restore CS8602
+#pragma warning restore CS8618
 
     public bool InLoginQueue()
     {
         return !ClientState.IsLoggedIn && _currentLoginStartTime != null;
     }
-    
+
     private unsafe void OnFrameworkUpdate(Framework framework)
     {
         if (ClientState.IsLoggedIn)
@@ -106,41 +119,59 @@ public class Plugin : IDalamudPlugin
                 $"Selected character: {_selectedCharacterId:X} on data center {_selectedDataCenter}");
         }
 
+        var yesno = GameGui.GetAddonByName("SelectYesno", 1);
+
+        // hook onto yesno dialogs for both exit queue and character select confirmation
+        if (yesno != IntPtr.Zero && !_selectYesNoHook.IsEnabled)
+        {
+            _selectYesNoHook.Enable();
+        }
+        else if (yesno == IntPtr.Zero && _selectYesNoHook.IsEnabled)
+        {
+            _selectYesNoHook.Disable();
+        }
+
         // are we currently in a login attempt?
         if (_currentLoginStartTime != null)
         {
             var addon = GameGui.GetAddonByName("SelectOk", 1);
             if (addon != IntPtr.Zero)
             {
-                _ui.LoginQueueWindow.SetDrawPos((AtkUnitBase*) addon);
+                // if the "exit queue?" dialog is on screen, attach to that instead
+                if (yesno != IntPtr.Zero)
+                {
+                    addon = yesno;
+                }
+
+                Ui.LoginQueueWindow.SetDrawPos((AtkUnitBase*) addon);
             }
-        }
-        else
-        {
-            // when charaSelectList initially disappears, and we have a 1007 status, we can assume we have started a login attempt
-            if (_selectedCharacterId > 0 && GameGui.GetAddonByName("_CharaSelectListMenu", 1) == IntPtr.Zero)
+            else
             {
-                _currentLoginStartTime = DateTime.Now;
-                _client.Send(new LoginQueueEnter(_config.ClientId, _selectedCharacterId, _config.ClientSalt,
-                    _selectedDataCenter, _selectedWorld));
-                PluginLog.Log(
-                    $"Login attempt started at {_currentLoginStartTime} with character {_selectedCharacterId:X} on data center {_selectedDataCenter} and world {_selectedWorld}");
+                if (_selectYesNoHook.IsEnabled)
+                {
+                    _selectYesNoHook.Disable();
+                }
             }
         }
     }
 
+    private void StartLoginAttempt()
+    {
+        _currentLoginStartTime = DateTime.Now;
+        Client.Send(new LoginQueueEnter(_config.ClientId, _selectedCharacterId, _config.ClientSalt,
+            _selectedDataCenter, _selectedWorld));
+        PluginLog.Log(
+            $"Login attempt started at {_currentLoginStartTime} with character {_selectedCharacterId:X} on data center {_selectedDataCenter} and world {_selectedWorld}");
+    }
+
     private unsafe IntPtr LobbyStatusUpdateDetour(IntPtr a1, IntPtr a2)
     {
-        var worldNameAddon = GameGui.GetAddonByName("_CharaSelectListMenu", 1);
-        PluginLog.Log($"worldNameAddon: {worldNameAddon.ToInt64():X}");
-        var charaId = AgentLobby.Instance()->SelectedCharacterId;
-        PluginLog.Log($"characterId: {charaId:X}");
         var lobbyStatus = (LobbyStatusUpdate*) a2.ToPointer();
         if (lobbyStatus->statusCode == (uint) LobbyStatusCode.WorldFull)
         {
             PluginLog.Log(
                 $"LobbyStatusUpdate: status = {lobbyStatus->statusCode}, queue length = {lobbyStatus->queueLength}");
-            _client.Send(new QueueStatusUpdate
+            Client.Send(new QueueStatusUpdate
             {
                 QueuePosition = lobbyStatus->queueLength
             });
@@ -149,18 +180,50 @@ public class Plugin : IDalamudPlugin
         return _lobbyStatusHook.Original(a1, a2);
     }
 
-    private void HandleLogin(object sender, EventArgs eventArgs)
+    private IntPtr SelectYesNoEventDetour(IntPtr atkUnit, ushort eventType, int which, IntPtr source,
+        IntPtr data)
+    {
+        if (eventType == 0x19 && which == 0) // EventType.Change, Yes button
+        {
+            if (_currentLoginStartTime != null)
+            {
+                // leaving login queue
+                _currentLoginStartTime = null;
+                PluginLog.Log("Sending QueueExit due to user cancellation of login queue");
+                Client.Send(new QueueExit {Reason = QueueExit.QueueExitReason.UserCancellation});
+            }
+            else
+            {
+                // logging in with a character, assuming CharaSelect is up...
+                if (GameGui.GetAddonByName("CharaSelect", 1) != IntPtr.Zero)
+                {
+                    StartLoginAttempt();
+                }
+            }
+        }
+
+        return _selectYesNoHook.Original(atkUnit, eventType, which, source, data);
+    }
+
+    private void HandleLogin(object? sender, EventArgs eventArgs)
     {
         PluginLog.Log($"HandleLogin: sender = {sender}, eventArgs = {eventArgs}");
         if (_currentLoginStartTime != null)
         {
+            Client.Send(new QueueExit {Reason = QueueExit.QueueExitReason.Success});
             var duration = DateTime.Now - _currentLoginStartTime;
             PluginLog.Log($"Login queue took {duration}");
             _currentLoginStartTime = null;
         }
+
+        // we don't want to hook yesno dialogs ingame
+        if (_selectYesNoHook.IsEnabled)
+        {
+            _selectYesNoHook.Disable();
+        }
     }
 
-    private void HandleLogout(object sender, EventArgs eventArgs)
+    private void HandleLogout(object? sender, EventArgs eventArgs)
     {
         PluginLog.Log($"HandleLogout: sender = {sender}, eventArgs = {eventArgs}");
         // just in case...
@@ -176,9 +239,12 @@ public class Plugin : IDalamudPlugin
             return;
         }
 
-        _ui.Dispose();
-        
-        _lobbyStatusHook?.Disable();
+        PluginInterface.LanguageChanged -= Client.LanguageChanged;
+        Client.DisposeAsync();
+
+        Ui.Dispose();
+
+        _selectYesNoHook?.Dispose();
         _lobbyStatusHook?.Dispose();
 
         PluginInterface.SavePluginConfig(_config);

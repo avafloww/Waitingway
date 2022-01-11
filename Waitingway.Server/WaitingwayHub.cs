@@ -111,7 +111,7 @@ public class WaitingwayHub : Hub
         client.Queue = null;
     }
 
-    public void QueueStatusUpdate(QueueStatusUpdate packet)
+    public async Task QueueStatusUpdate(QueueStatusUpdate packet)
     {
         var client = _manager.GetClientForConnection(Context.ConnectionId);
         if (client.Queue == null)
@@ -131,9 +131,29 @@ public class WaitingwayHub : Hub
         
         _db.QueueSessions.Attach(sessionData.Session);
         _db.QueueSessionData.Add(sessionData);
-        _db.SaveChanges();
+        await _db.SaveChangesAsync();
         
         client.Queue.QueuePosition = packet.QueuePosition;
+
+        await Send(new QueueStatusEstimate
+        {
+            EstimatedTime = TimeSpan.Zero,
+            LocalisedMessages = new[] {
+                new GuiText
+                {
+                    Color = GuiText.GuiTextColor.Yellow,
+                    Text = $"Your last logged queue position: {packet.QueuePosition}"
+                },
+                new GuiText {
+                    Color = GuiText.GuiTextColor.Yellow,
+                    Text = "Estimated wait time: unknown"
+                },
+                new GuiText
+                {
+                    Text = "Estimated wait times are not yet available.\nWe're working on adding this feature, stay tuned!"
+                }
+            }
+        });
     }
 
     private async Task Send(IPacket packet)

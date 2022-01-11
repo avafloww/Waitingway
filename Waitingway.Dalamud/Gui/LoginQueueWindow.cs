@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
+using Dalamud.Interface.Colors;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -6,19 +8,20 @@ namespace Waitingway.Dalamud.Gui;
 
 internal class LoginQueueWindow
 {
-    private readonly PluginUi ui;
-    private int _posX = 0;
-    private int _posY = 0;
+    private readonly string _version = typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "unknown";
+    private readonly PluginUi _ui;
+    private int _posX;
+    private int _posY;
     private int _width = 400;
 
     public LoginQueueWindow(PluginUi ui)
     {
-        this.ui = ui;
+        _ui = ui;
     }
 
     public void Draw()
     {
-        if (!ui.Plugin.InLoginQueue())
+        if (!_ui.Plugin.InLoginQueue() || _ui.Plugin.GameGui.GetAddonByName("_CharaSelectListMenu", 1) == IntPtr.Zero)
         {
             return;
         }
@@ -33,12 +36,16 @@ internal class LoginQueueWindow
                                   | ImGuiWindowFlags.NoDocking
                                   | ImGuiWindowFlags.NoCollapse
                                   | ImGuiWindowFlags.NoMove
-                                  | ImGuiWindowFlags.NoMouseInputs
+                                  | ImGuiWindowFlags.NoTitleBar
         );
         ImGui.SetWindowPos(new Vector2(_posX, _posY));
         ImGui.SetWindowSize(new Vector2(_width, 0));
 
-        ImGui.Text("asdf");
+        _ui.DrawQueueText();
+
+        ImGui.Separator();
+        ImGui.Text($"Waitingway version {_version} (alpha)");
+        ImGui.TextColored(ImGuiColors.DalamudGrey, "Please report any bugs to @Avaflow#0001 on Discord.");
         ImGui.End();
     }
 
@@ -48,7 +55,7 @@ internal class LoginQueueWindow
         {
             return;
         }
-        
+
         _posX = loginWindow->X;
         _posY = loginWindow->Y + loginWindow->RootNode->Height - 10;
         _width = loginWindow->RootNode->Width;
