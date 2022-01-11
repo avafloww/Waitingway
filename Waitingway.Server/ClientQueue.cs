@@ -1,4 +1,6 @@
-﻿namespace Waitingway.Server;
+﻿using Waitingway.Server.Models;
+
+namespace Waitingway.Server;
 
 public class ClientQueue
 {
@@ -14,6 +16,7 @@ public class ClientQueue
         }
     }
 
+    public QueueSession DbSession { get; init; }
     public DateTime EntryTime { get; } = DateTime.Now;
     public DateTime LastUpdateReceived { get; set; } = DateTime.Now;
 }

@@ -8,6 +8,8 @@ using Dalamud.IoC;
 using Dalamud.Logging;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Component.GUI;
+using ImGuiScene;
 using Waitingway.Dalamud.Network;
 using Waitingway.Common.Protocol.Serverbound;
 
@@ -19,7 +21,7 @@ public class Plugin : IDalamudPlugin
 
     [PluginService]
     [RequiredVersion("1.0")]
-    private DalamudPluginInterface PluginInterface { get; init; }
+    internal DalamudPluginInterface PluginInterface { get; init; }
 
     [PluginService]
     [RequiredVersion("1.0")]
@@ -46,6 +48,7 @@ public class Plugin : IDalamudPlugin
 
     private Hook<OnLobbyErrorCode> _lobbyStatusHook;
 
+    private PluginUi _ui;
     private WaitingwayClient _client;
 
     private delegate IntPtr OnLobbyErrorCode(IntPtr a1, IntPtr a2);
@@ -57,6 +60,8 @@ public class Plugin : IDalamudPlugin
         _config.Initialize(PluginInterface);
         PluginLog.Log($"Waitingway Client ID: {_config.ClientId}");
 
+        _ui = new PluginUi(this);
+        
         _client = new WaitingwayClient(_config.RemoteServer, _config.ClientId);
 
         var lobbyStatusAddr = SigScanner!.ScanText(
@@ -72,6 +77,11 @@ public class Plugin : IDalamudPlugin
         Framework.Update += OnFrameworkUpdate;
     }
 
+    public bool InLoginQueue()
+    {
+        return !ClientState.IsLoggedIn && _currentLoginStartTime != null;
+    }
+    
     private unsafe void OnFrameworkUpdate(Framework framework)
     {
         if (ClientState.IsLoggedIn)
@@ -97,13 +107,22 @@ public class Plugin : IDalamudPlugin
         }
 
         // are we currently in a login attempt?
-        if (_currentLoginStartTime == null)
+        if (_currentLoginStartTime != null)
+        {
+            var addon = GameGui.GetAddonByName("SelectOk", 1);
+            if (addon != IntPtr.Zero)
+            {
+                _ui.LoginQueueWindow.SetDrawPos((AtkUnitBase*) addon);
+            }
+        }
+        else
         {
             // when charaSelectList initially disappears, and we have a 1007 status, we can assume we have started a login attempt
             if (_selectedCharacterId > 0 && GameGui.GetAddonByName("_CharaSelectListMenu", 1) == IntPtr.Zero)
             {
                 _currentLoginStartTime = DateTime.Now;
-                _client.Send(new LoginQueueEnter(_config.ClientId, _selectedCharacterId, _config.ClientSalt, _selectedDataCenter, _selectedWorld));
+                _client.Send(new LoginQueueEnter(_config.ClientId, _selectedCharacterId, _config.ClientSalt,
+                    _selectedDataCenter, _selectedWorld));
                 PluginLog.Log(
                     $"Login attempt started at {_currentLoginStartTime} with character {_selectedCharacterId:X} on data center {_selectedDataCenter} and world {_selectedWorld}");
             }
@@ -157,6 +176,8 @@ public class Plugin : IDalamudPlugin
             return;
         }
 
+        _ui.Dispose();
+        
         _lobbyStatusHook?.Disable();
         _lobbyStatusHook?.Dispose();
 

@@ -1,8 +1,8 @@
-﻿using System.Diagnostics;
-using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.SignalR;
 using Waitingway.Common.Protocol;
 using Waitingway.Common.Protocol.Clientbound;
 using Waitingway.Common.Protocol.Serverbound;
+using Waitingway.Server.Models;
 
 namespace Waitingway.Server;
 
@@ -10,11 +10,13 @@ public class WaitingwayHub : Hub
 {
     private readonly ILogger<WaitingwayHub> _logger;
     private readonly ClientManager _manager;
+    private readonly WaitingwayContext _db;
 
-    public WaitingwayHub(ILogger<WaitingwayHub> logger, ClientManager manager)
+    public WaitingwayHub(ILogger<WaitingwayHub> logger, ClientManager manager, WaitingwayContext db)
     {
         _logger = logger;
         _manager = manager;
+        _db = db;
     }
 
     public override Task OnConnectedAsync()
@@ -53,7 +55,33 @@ public class WaitingwayHub : Hub
         }
 
         _logger.LogDebug("[{}] LoginQueueEnter: {}", client.Id, packet);
-        client.Queue = new ClientQueue {QueuePosition = 0};
+
+        var session = new QueueSession
+        {
+            ClientId = Guid.Parse(client.Id),
+            ClientSessionId = packet.SessionId,
+            DataCenter = packet.DatacenterId,
+            World = packet.WorldId,
+            SessionType = QueueSession.Type.Login
+        };
+
+        var sessionData = new QueueSessionData
+        {
+            Session = session,
+            Type = QueueSessionData.DataType.Start,
+            Time = DateTime.UtcNow
+        };
+        
+        _db.QueueSessionData.Add(sessionData);
+        _db.SaveChanges();
+
+        client.Queue = new ClientQueue
+        {
+            QueuePosition = 0,
+            DbSession = session
+        };
+        
+        _logger.LogInformation("[{}] entered login queue (DbSessionId = {})", client.Id, client.Queue.DbSession.Id);
     }
 
     public void QueueExit(QueueExit packet)
@@ -65,6 +93,21 @@ public class WaitingwayHub : Hub
         }
         
         _logger.LogDebug("[{}] QueueExit: {}", client.Id, packet);
+
+        var sessionData = new QueueSessionData
+        {
+            Session = client.Queue.DbSession,
+            Type = QueueSessionData.DataType.End,
+            EndReason = packet.Reason,
+            Time = DateTime.UtcNow
+        };
+
+        _db.QueueSessions.Attach(sessionData.Session);
+        _db.QueueSessionData.Add(sessionData);
+        _db.SaveChanges();
+        
+        _logger.LogInformation("[{}] left queue (DbSessionId = {})", client.Id, client.Queue.DbSession.Id);
+
         client.Queue = null;
     }
 
@@ -77,6 +120,19 @@ public class WaitingwayHub : Hub
         }
         
         _logger.LogDebug("[{}] QueueStatusUpdate: {}", client.Id, packet);
+
+        var sessionData = new QueueSessionData
+        {
+            Session = client.Queue.DbSession,
+            Type = QueueSessionData.DataType.Update,
+            QueuePosition = packet.QueuePosition,
+            Time = DateTime.UtcNow
+        };
+        
+        _db.QueueSessions.Attach(sessionData.Session);
+        _db.QueueSessionData.Add(sessionData);
+        _db.SaveChanges();
+        
         client.Queue.QueuePosition = packet.QueuePosition;
     }
 
