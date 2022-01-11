@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Numerics;
+using Dalamud.Interface;
 using Dalamud.Interface.Colors;
+using Dalamud.Interface.Components;
+using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
 
@@ -45,7 +49,25 @@ internal class LoginQueueWindow
 
         ImGui.Separator();
         ImGui.Text($"Waitingway version {_version} (alpha)");
-        ImGui.TextColored(ImGuiColors.DalamudGrey, "Please report any bugs to @Avaflow#0001 on Discord.");
+        ImGui.SameLine();
+
+        if (ImGuiComponents.IconButton(FontAwesomeIcon.Globe))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://waitingway.com",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                PluginLog.LogError($"Failed to open website: {ex}");
+            }
+        }
+
+        ImGui.TextColored(ImGuiColors.DalamudGrey, "Please report any bugs on the support Discord (the globe icon above).");
         ImGui.End();
     }
 

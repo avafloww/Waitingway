@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Logging;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -13,36 +14,58 @@ public class WaitingwayClient : IAsyncDisposable
     private readonly Plugin _plugin;
     private readonly string _clientId;
     private readonly HubConnection _connection;
+    private readonly CancellationTokenSource _cancellationTokenSource;
     private string _language;
-    private bool _connected;
+    private bool Connected => _connection.State == HubConnectionState.Connected;
     private bool _gotGoodbye;
 
     public WaitingwayClient(Plugin plugin, string serverUrl, string clientId, string language)
     {
         _plugin = plugin;
         _clientId = clientId;
+
+        PluginLog.Log($"Remote server: {serverUrl}");
         _connection = new HubConnectionBuilder()
             .WithUrl(serverUrl)
-            .WithAutomaticReconnect()
+            .WithAutomaticReconnect(new InfiniteRetryPolicy())
             .Build();
         _language = language;
 
         RegisterHandlers();
 
-        plugin.Ui.SetStatusText("Waiting for server...");
-        Task.Run(async () =>
-        {
-            PluginLog.Log($"Attempting to connect to remote server at {serverUrl}.");
-            await _connection.StartAsync();
-            _gotGoodbye = false;
-            _connected = true;
-            PluginLog.Log("Connected to server.");
-            await SendHello();
+        _cancellationTokenSource = new CancellationTokenSource();
 
-            // register the reconnect handler in case we get disconnected
-            _connection.Reconnected += OnReconnect;
-            _connection.Closed += OnDisconnect;
-        });
+        plugin.Ui.SetStatusText("Waiting for server...");
+        Task.Run(() => EstablishInitialConnection(_cancellationTokenSource.Token));
+        
+        // register the reconnect handler in case we get disconnected
+        _connection.Reconnected += OnReconnect;
+        _connection.Closed += OnDisconnect;
+    }
+
+    private async Task EstablishInitialConnection(CancellationToken cancellationToken)
+    {
+        PluginLog.Log("Attempting to connect to remote server.");
+
+        while (true)
+        {
+            try
+            {
+                await _connection.StartAsync(cancellationToken);
+
+                _gotGoodbye = false;
+                PluginLog.Log("Connected to server.");
+                await SendHello();
+            }
+            catch when (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+            catch
+            {
+                await Task.Delay(5000, cancellationToken);
+            }
+        }
     }
 
     private void RegisterHandlers()
@@ -83,19 +106,18 @@ public class WaitingwayClient : IAsyncDisposable
     private async Task OnReconnect(string? _)
     {
         _gotGoodbye = false;
-        _connected = true;
         PluginLog.Log("Reconnected to server.");
         await SendHello();
     }
 
     private Task OnDisconnect(Exception? ex)
     {
-        _connected = false;
         PluginLog.Log($"Disconnected from server. {ex}");
 
         if (!_gotGoodbye)
         {
-            _plugin.Ui.SetStatusText("Disconnected from server unexpectedly.\nCheck Dalamud logs for more information.");
+            _plugin.Ui.SetStatusText(
+                "Disconnected from server unexpectedly.\nCheck Dalamud logs for more information.");
         }
 
         return Task.CompletedTask;
@@ -120,13 +142,15 @@ public class WaitingwayClient : IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
         GC.SuppressFinalize(this);
         return _connection.DisposeAsync();
     }
 
     public async Task Send(IPacket packet)
     {
-        if (!_connected)
+        if (!Connected)
         {
             PluginLog.Warning($"Not connected to server, skipping send of {packet.GetType().Name} packet");
             return;
