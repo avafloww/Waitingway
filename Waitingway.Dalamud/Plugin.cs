@@ -114,9 +114,6 @@ public class Plugin : IDalamudPlugin
             _selectedWorld = *(ushort*) ((byte*) agentLobby + 0x824);
             // todo: once Dalamud includes the latest clientstructs
             // _selectedWorld = agentLobby->WorldId;
-
-            PluginLog.Log(
-                $"Selected character: {_selectedCharacterId:X} on data center {_selectedDataCenter}");
         }
 
         var yesno = GameGui.GetAddonByName("SelectYesno", 1);
@@ -160,21 +157,26 @@ public class Plugin : IDalamudPlugin
         _currentLoginStartTime = DateTime.Now;
         Client.Send(new LoginQueueEnter(_config.ClientId, _selectedCharacterId, _config.ClientSalt,
             _selectedDataCenter, _selectedWorld));
-        PluginLog.Log(
-            $"Login attempt started at {_currentLoginStartTime} with character {_selectedCharacterId:X} on data center {_selectedDataCenter} and world {_selectedWorld}");
     }
 
     private unsafe IntPtr LobbyStatusUpdateDetour(IntPtr a1, IntPtr a2)
     {
-        var lobbyStatus = (LobbyStatusUpdate*) a2.ToPointer();
-        if (lobbyStatus->statusCode == (uint) LobbyStatusCode.WorldFull)
+        try
         {
-            PluginLog.Log(
-                $"LobbyStatusUpdate: status = {lobbyStatus->statusCode}, queue length = {lobbyStatus->queueLength}");
-            Client.Send(new QueueStatusUpdate
+            var lobbyStatus = (LobbyStatusUpdate*) a2.ToPointer();
+            if (lobbyStatus->statusCode == (uint) LobbyStatusCode.WorldFull)
             {
-                QueuePosition = lobbyStatus->queueLength
-            });
+                PluginLog.Log(
+                    $"LobbyStatusUpdate: status = {lobbyStatus->statusCode}, queue length = {lobbyStatus->queueLength}");
+                Client.Send(new QueueStatusUpdate
+                {
+                    QueuePosition = lobbyStatus->queueLength
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Log($"Exception in LobbyStatusUpdateDetour: {ex}");
         }
 
         return _lobbyStatusHook.Original(a1, a2);
@@ -183,23 +185,30 @@ public class Plugin : IDalamudPlugin
     private IntPtr SelectYesNoEventDetour(IntPtr atkUnit, ushort eventType, int which, IntPtr source,
         IntPtr data)
     {
-        if (eventType == 0x19 && which == 0) // EventType.Change, Yes button
+        try
         {
-            if (_currentLoginStartTime != null)
+            if (eventType == 0x19 && which == 0) // EventType.Change, Yes button
             {
-                // leaving login queue
-                _currentLoginStartTime = null;
-                PluginLog.Log("Sending QueueExit due to user cancellation of login queue");
-                Client.Send(new QueueExit {Reason = QueueExit.QueueExitReason.UserCancellation});
-            }
-            else
-            {
-                // logging in with a character, assuming CharaSelect is up...
-                if (GameGui.GetAddonByName("CharaSelect", 1) != IntPtr.Zero)
+                if (_currentLoginStartTime != null)
                 {
-                    StartLoginAttempt();
+                    // leaving login queue
+                    _currentLoginStartTime = null;
+                    PluginLog.Log("Sending QueueExit due to user cancellation of login queue");
+                    Client.Send(new QueueExit {Reason = QueueExit.QueueExitReason.UserCancellation});
+                }
+                else
+                {
+                    // logging in with a character, assuming CharaSelect is up...
+                    if (GameGui.GetAddonByName("CharaSelect", 1) != IntPtr.Zero)
+                    {
+                        StartLoginAttempt();
+                    }
                 }
             }
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error($"Exception in SelectYesNoEventDetour: {ex}");
         }
 
         return _selectYesNoHook.Original(atkUnit, eventType, which, source, data);
