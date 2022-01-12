@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Logging;
@@ -16,8 +17,18 @@ public class WaitingwayClient : IAsyncDisposable
     private readonly HubConnection _connection;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private string _language;
-    private bool Connected => _connection.State == HubConnectionState.Connected;
+
+    public bool IsDisposed { get; private set; }
+
+    public bool Connected => _connection.State == HubConnectionState.Connected;
     private bool _gotGoodbye;
+
+    public ulong CharacterId { get; private set; }
+    public ushort DataCenterId { get; private set; }
+    public ushort WorldId { get; private set; }
+    public DateTime? QueueEntryTime { get; private set; }
+
+    public bool InQueue => QueueEntryTime != null;
 
     public WaitingwayClient(Plugin plugin, string serverUrl, string clientId, string language)
     {
@@ -33,9 +44,10 @@ public class WaitingwayClient : IAsyncDisposable
 
         RegisterHandlers();
 
+        plugin.PluginInterface.LanguageChanged += LanguageChanged;
+
         _cancellationTokenSource = new CancellationTokenSource();
 
-        plugin.Ui.SetStatusText("Waiting for server...");
         Task.Run(() => EstablishInitialConnection(_cancellationTokenSource.Token));
 
         // register the reconnect handler in case we get disconnected
@@ -52,8 +64,6 @@ public class WaitingwayClient : IAsyncDisposable
             try
             {
                 await _connection.StartAsync(cancellationToken);
-
-                _gotGoodbye = false;
                 PluginLog.Log("Connected to server.");
                 await SendHello();
             }
@@ -78,6 +88,7 @@ public class WaitingwayClient : IAsyncDisposable
 
     private void HandleServerHello(ServerHello packet)
     {
+        CheckDisposed();
 #if DEBUG
         PluginLog.LogDebug("Received ServerHello packet");
 #endif
@@ -85,6 +96,7 @@ public class WaitingwayClient : IAsyncDisposable
 
     private void HandleServerGoodbye(ServerGoodbye packet)
     {
+        CheckDisposed();
 #if DEBUG
         PluginLog.LogDebug("Received ServerGoodbye packet");
 #endif
@@ -97,6 +109,7 @@ public class WaitingwayClient : IAsyncDisposable
 
     private void HandleQueueStatusEstimate(QueueStatusEstimate packet)
     {
+        CheckDisposed();
 #if DEBUG
         PluginLog.LogDebug("Received QueueStatusEstimate packet");
 #endif
@@ -105,13 +118,14 @@ public class WaitingwayClient : IAsyncDisposable
 
     private async Task OnReconnect(string? _)
     {
-        _gotGoodbye = false;
+        CheckDisposed();
         PluginLog.Log("Reconnected to server.");
         await SendHello();
     }
 
     private Task OnDisconnect(Exception? ex)
     {
+        CheckDisposed();
         PluginLog.Log($"Disconnected from server. {ex}");
 
         if (!_gotGoodbye)
@@ -120,11 +134,15 @@ public class WaitingwayClient : IAsyncDisposable
                 "Disconnected from server unexpectedly.\nCheck Dalamud logs for more information.");
         }
 
+        // reset this now that we've actually disconnected
+        _gotGoodbye = false;
+
         return Task.CompletedTask;
     }
 
     private async Task SendHello()
     {
+        CheckDisposed();
         await SendAsync(new ClientHello
         {
             ProtocolVersion = 1,
@@ -136,15 +154,70 @@ public class WaitingwayClient : IAsyncDisposable
 
     internal void LanguageChanged(string newLanguage)
     {
+        CheckDisposed();
         _language = newLanguage;
         Send(new ClientLanguageChange {Language = newLanguage});
     }
 
+    internal void TryExitQueue(QueueExit.QueueExitReason reason)
+    {
+        if (InQueue)
+        {
+            ExitQueue(reason);
+        }
+    }
+
+    internal void ExitQueue(QueueExit.QueueExitReason reason)
+    {
+        CheckDisposed();
+        Debug.Assert(QueueEntryTime != null);
+        QueueEntryTime = null;
+        Send(new QueueExit {Reason = reason});
+    }
+
+    internal void EnterLoginQueue()
+    {
+        CheckDisposed();
+        Debug.Assert(QueueEntryTime == null);
+        QueueEntryTime = DateTime.Now;
+        Send(new LoginQueueEnter(
+            _plugin.Config.ClientId,
+            CharacterId,
+            _plugin.Config.ClientSalt,
+            DataCenterId,
+            WorldId
+        ));
+    }
+
+    internal void ResetLoginQueue(ulong characterId, ushort dataCenterId, ushort worldId)
+    {
+        CheckDisposed();
+
+        QueueEntryTime = null;
+        CharacterId = characterId;
+        DataCenterId = dataCenterId;
+        WorldId = worldId;
+    }
+
+    private void CheckDisposed()
+    {
+        if (IsDisposed)
+        {
+            throw new ObjectDisposedException("WaitingwayClient");
+        }
+    }
+
     public ValueTask DisposeAsync()
     {
+        CheckDisposed();
+        IsDisposed = true;
+
+        _plugin.PluginInterface.LanguageChanged -= LanguageChanged;
+
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
         GC.SuppressFinalize(this);
+
         return _connection.DisposeAsync();
     }
 
@@ -155,6 +228,8 @@ public class WaitingwayClient : IAsyncDisposable
 
     public async Task SendAsync(IPacket packet)
     {
+        CheckDisposed();
+
         if (!Connected)
         {
             PluginLog.Warning($"Not connected to server, skipping send of {packet.GetType().Name} packet");

@@ -18,6 +18,7 @@ internal class PluginUi : IDisposable
 
         LoginQueueWindow = new LoginQueueWindow(this);
 
+        SetStatusText("Waiting for server...");
         Plugin.PluginInterface.UiBuilder.Draw += Draw;
     }
 

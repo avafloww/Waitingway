@@ -25,7 +25,7 @@ internal class LoginQueueWindow
 
     public void Draw()
     {
-        if (!_ui.Plugin.InLoginQueue() || _ui.Plugin.GameGui.GetAddonByName("_CharaSelectListMenu", 1) == IntPtr.Zero)
+        if (!_ui.Plugin.InLoginQueue() || _ui.Plugin.GameGui.GetAddonByName("CharaSelect", 1) == IntPtr.Zero)
         {
             return;
         }
