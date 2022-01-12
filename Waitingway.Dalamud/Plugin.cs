@@ -11,6 +11,7 @@ using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Waitingway.Dalamud.Network;
 using Waitingway.Common.Protocol.Serverbound;
+using Waitingway.Dalamud.Structs;
 
 namespace Waitingway.Dalamud;
 
@@ -62,6 +63,7 @@ public class Plugin : IDalamudPlugin
     {
         _config = PluginInterface!.GetPluginConfig() as Configuration ?? new Configuration();
         _config.Initialize(PluginInterface);
+        _config.Save(); // save immediately in case we generated a new client ID
         PluginLog.Log($"Waitingway Client ID: {_config.ClientId}");
 
         Ui = new PluginUi(this);
@@ -167,11 +169,20 @@ public class Plugin : IDalamudPlugin
             if (lobbyStatus->statusCode == (uint) LobbyStatusCode.WorldFull)
             {
                 PluginLog.Log(
-                    $"LobbyStatusUpdate: status = {lobbyStatus->statusCode}, queue length = {lobbyStatus->queueLength}");
-                Client.Send(new QueueStatusUpdate
+                    $"LobbyStatusUpdate: waiting in queue, queue length = {lobbyStatus->queueLength}");
+                if (lobbyStatus->queueLength < 0)
                 {
-                    QueuePosition = lobbyStatus->queueLength
-                });
+                    // "Character not properly logged off", skip
+                    PluginLog.LogWarning(
+                        "LobbyStatusUpdate: invalid queue length (character still logged in?), not sending update to server");
+                }
+                else
+                {
+                    Client.Send(new QueueStatusUpdate
+                    {
+                        QueuePosition = (uint) lobbyStatus->queueLength
+                    });
+                }
             }
         }
         catch (Exception ex)
@@ -216,7 +227,7 @@ public class Plugin : IDalamudPlugin
 
     private void HandleLogin(object? sender, EventArgs eventArgs)
     {
-        PluginLog.Log($"HandleLogin: sender = {sender}, eventArgs = {eventArgs}");
+        PluginLog.Debug($"HandleLogin: sender = {sender}, eventArgs = {eventArgs}");
         if (_currentLoginStartTime != null)
         {
             Client.Send(new QueueExit {Reason = QueueExit.QueueExitReason.Success});
@@ -234,7 +245,7 @@ public class Plugin : IDalamudPlugin
 
     private void HandleLogout(object? sender, EventArgs eventArgs)
     {
-        PluginLog.Log($"HandleLogout: sender = {sender}, eventArgs = {eventArgs}");
+        PluginLog.Debug($"HandleLogout: sender = {sender}, eventArgs = {eventArgs}");
         // just in case...
         _currentLoginStartTime = null;
     }

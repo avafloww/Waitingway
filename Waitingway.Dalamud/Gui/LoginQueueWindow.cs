@@ -14,9 +14,9 @@ internal class LoginQueueWindow
 {
     private readonly string _version = typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "unknown";
     private readonly PluginUi _ui;
-    private int _posX;
-    private int _posY;
-    private int _width = 400;
+    private float _posX;
+    private float _posY;
+    private float _width = 400;
 
     public LoginQueueWindow(PluginUi ui)
     {
@@ -30,6 +30,7 @@ internal class LoginQueueWindow
             return;
         }
 
+        ImGuiHelpers.ForceNextWindowMainViewport();
         ImGui.Begin("Waitingway", ImGuiWindowFlags.NoNav
                                   | ImGuiWindowFlags.NoNavFocus
                                   | ImGuiWindowFlags.NoNavInputs
@@ -42,6 +43,7 @@ internal class LoginQueueWindow
                                   | ImGuiWindowFlags.NoMove
                                   | ImGuiWindowFlags.NoTitleBar
         );
+
         ImGui.SetWindowPos(new Vector2(_posX, _posY));
         ImGui.SetWindowSize(new Vector2(_width, 0));
 
@@ -67,7 +69,8 @@ internal class LoginQueueWindow
             }
         }
 
-        ImGui.TextColored(ImGuiColors.DalamudGrey, "Please report any bugs on the support Discord (the globe icon above).");
+        ImGui.TextColored(ImGuiColors.DalamudGrey,
+            "Please report any bugs on the support Discord (the globe icon above).");
         ImGui.End();
     }
 
@@ -79,7 +82,9 @@ internal class LoginQueueWindow
         }
 
         _posX = loginWindow->X;
-        _posY = loginWindow->Y + loginWindow->RootNode->Height - 10;
-        _width = loginWindow->RootNode->Width;
+        _posY = loginWindow->Y
+                + loginWindow->RootNode->Height * loginWindow->RootNode->ScaleY
+                - 10 * loginWindow->RootNode->ScaleY;
+        _width = loginWindow->RootNode->Width * loginWindow->RootNode->ScaleX;
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Waitingway.Dalamud;
+﻿namespace Waitingway.Dalamud.Structs;
 
 public enum LobbyStatusCode: uint
 {
