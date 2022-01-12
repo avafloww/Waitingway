@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Gui;
@@ -166,7 +167,7 @@ public class Plugin : IDalamudPlugin
         try
         {
             var lobbyStatus = (LobbyStatusUpdate*) a2.ToPointer();
-            if (lobbyStatus->statusCode == (uint) LobbyStatusCode.WorldFull)
+            if (lobbyStatus->statusCode == LobbyStatusCode.WorldFull)
             {
                 PluginLog.Log(
                     $"LobbyStatusUpdate: waiting in queue, queue length = {lobbyStatus->queueLength}");

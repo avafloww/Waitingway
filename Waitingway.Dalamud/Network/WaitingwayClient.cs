@@ -37,7 +37,7 @@ public class WaitingwayClient : IAsyncDisposable
 
         plugin.Ui.SetStatusText("Waiting for server...");
         Task.Run(() => EstablishInitialConnection(_cancellationTokenSource.Token));
-        
+
         // register the reconnect handler in case we get disconnected
         _connection.Reconnected += OnReconnect;
         _connection.Closed += OnDisconnect;
@@ -125,7 +125,7 @@ public class WaitingwayClient : IAsyncDisposable
 
     private async Task SendHello()
     {
-        await Send(new ClientHello
+        await SendAsync(new ClientHello
         {
             ProtocolVersion = 1,
             ClientId = _clientId,
@@ -134,10 +134,10 @@ public class WaitingwayClient : IAsyncDisposable
         });
     }
 
-    internal async void LanguageChanged(string newLanguage)
+    internal void LanguageChanged(string newLanguage)
     {
         _language = newLanguage;
-        await Send(new ClientLanguageChange {Language = newLanguage});
+        Send(new ClientLanguageChange {Language = newLanguage});
     }
 
     public ValueTask DisposeAsync()
@@ -148,7 +148,12 @@ public class WaitingwayClient : IAsyncDisposable
         return _connection.DisposeAsync();
     }
 
-    public async Task Send(IPacket packet)
+    public void Send(IPacket packet)
+    {
+        Task.Run(() => SendAsync(packet));
+    }
+
+    public async Task SendAsync(IPacket packet)
     {
         if (!Connected)
         {

@@ -6,6 +6,6 @@ namespace Waitingway.Dalamud.Structs;
 [StructLayout(LayoutKind.Explicit, Size = 0x20)]
 public struct LobbyStatusUpdate
 {
-    [FieldOffset(0x18)] public int statusCode;
+    [FieldOffset(0x18)] public LobbyStatusCode statusCode;
     [FieldOffset(0x1C)] public int queueLength;
 }
