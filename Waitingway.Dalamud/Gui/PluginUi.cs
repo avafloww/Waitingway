@@ -1,10 +1,8 @@
 ﻿using System;
-using Dalamud.Interface.Colors;
 using ImGuiNET;
 using Waitingway.Common.Protocol;
-using Waitingway.Dalamud.Gui;
 
-namespace Waitingway.Dalamud;
+namespace Waitingway.Dalamud.Gui;
 
 internal class PluginUi : IDisposable
 {
