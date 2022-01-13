@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Dalamud", "Waiti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Server", "Waitingway.Server\Waitingway.Server.csproj", "{2DCF49CE-0377-4412-A243-25FED5580680}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Common", "Waitingway.Common\Waitingway.Common.csproj", "{B2B39B0F-774B-4309-817E-ACFA2F1D8ACE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Protocol", "Waitingway.Protocol\Waitingway.Protocol.csproj", "{B2B39B0F-774B-4309-817E-ACFA2F1D8ACE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

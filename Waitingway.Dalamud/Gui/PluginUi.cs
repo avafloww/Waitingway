@@ -1,6 +1,6 @@
 ﻿using System;
 using ImGuiNET;
-using Waitingway.Common.Protocol;
+using Waitingway.Protocol;
 
 namespace Waitingway.Dalamud.Gui;
 

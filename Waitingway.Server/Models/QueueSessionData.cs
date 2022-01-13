@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using Waitingway.Common.Protocol.Serverbound;
+using Waitingway.Protocol.Serverbound;
 
 namespace Waitingway.Server.Models;
 

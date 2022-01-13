@@ -52,7 +52,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Waitingway.Common\Waitingway.Common.csproj" />
+      <ProjectReference Include="..\Waitingway.Protocol\Waitingway.Protocol.csproj" />
     </ItemGroup>
 
 </Project>

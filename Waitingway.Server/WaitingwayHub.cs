@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using Waitingway.Common.Protocol;
-using Waitingway.Common.Protocol.Clientbound;
-using Waitingway.Common.Protocol.Serverbound;
+using Waitingway.Protocol;
+using Waitingway.Protocol.Clientbound;
+using Waitingway.Protocol.Serverbound;
 using Waitingway.Server.Models;
 
 namespace Waitingway.Server;

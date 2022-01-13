@@ -1,4 +1,4 @@
-﻿namespace Waitingway.Common.Protocol.Serverbound;
+﻿namespace Waitingway.Protocol.Serverbound;
 
 public class QueueStatusUpdate : IPacket
 {

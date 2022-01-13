@@ -1,7 +1,7 @@
 ﻿using System;
 using Dalamud.Logging;
-using Waitingway.Common.Protocol.Serverbound;
 using Waitingway.Dalamud.Network;
+using Waitingway.Protocol.Serverbound;
 
 namespace Waitingway.Dalamud.Handler;
 

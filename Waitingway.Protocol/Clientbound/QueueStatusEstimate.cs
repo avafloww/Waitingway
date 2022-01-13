@@ -1,4 +1,4 @@
-﻿namespace Waitingway.Common.Protocol.Clientbound;
+﻿namespace Waitingway.Protocol.Clientbound;
 
 public class QueueStatusEstimate : IPacket
 {

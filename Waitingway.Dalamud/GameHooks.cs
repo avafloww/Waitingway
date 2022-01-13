@@ -3,9 +3,9 @@ using Dalamud.Game;
 using Dalamud.Hooking;
 using Dalamud.Logging;
 using Siggingway;
-using Waitingway.Common.Protocol.Serverbound;
 using Waitingway.Dalamud.Network;
 using Waitingway.Dalamud.Structs;
+using Waitingway.Protocol.Serverbound;
 
 namespace Waitingway.Dalamud;
 

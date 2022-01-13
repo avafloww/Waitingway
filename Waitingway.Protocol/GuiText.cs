@@ -1,6 +1,6 @@
 ﻿using System.Numerics;
 
-namespace Waitingway.Common.Protocol;
+namespace Waitingway.Protocol;
 
 public class GuiText
 {

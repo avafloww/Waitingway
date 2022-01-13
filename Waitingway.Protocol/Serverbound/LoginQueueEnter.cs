@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace Waitingway.Common.Protocol.Serverbound;
+namespace Waitingway.Protocol.Serverbound;
 
 public class LoginQueueEnter : IPacket
 {

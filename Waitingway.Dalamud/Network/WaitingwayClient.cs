@@ -4,9 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.Logging;
 using Microsoft.AspNetCore.SignalR.Client;
-using Waitingway.Common.Protocol;
-using Waitingway.Common.Protocol.Clientbound;
-using Waitingway.Common.Protocol.Serverbound;
+using Waitingway.Protocol;
+using Waitingway.Protocol.Clientbound;
+using Waitingway.Protocol.Serverbound;
 
 namespace Waitingway.Dalamud.Network;
 
