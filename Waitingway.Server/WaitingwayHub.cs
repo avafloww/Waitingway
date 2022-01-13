@@ -36,7 +36,7 @@ public class WaitingwayHub : Hub
     public async Task ClientHello(ClientHello packet)
     {
         _logger.LogInformation("connection {} identified as client {}", Context.ConnectionId, packet.ClientId);
-        _manager.Add(Context.ConnectionId, new Client {Id = packet.ClientId});
+        _manager.Add(Context.ConnectionId, new Client {Id = packet.ClientId, PluginVersion = packet.PluginVersion});
         await Send(new ServerHello());
     }
 
@@ -62,7 +62,8 @@ public class WaitingwayHub : Hub
             ClientSessionId = packet.SessionId,
             DataCenter = packet.DatacenterId,
             World = packet.WorldId,
-            SessionType = QueueSession.Type.Login
+            SessionType = QueueSession.Type.Login,
+            PluginVersion = client.PluginVersion
         };
 
         var sessionData = new QueueSessionData

@@ -26,6 +26,8 @@ public class QueueSession
     public int? DutyContentId { get; set; }
     
     public List<QueueSessionData> DataPoints { get; set; }
+    
+    public string PluginVersion { get; set; }
 
     public enum Type
     {

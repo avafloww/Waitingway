@@ -3,10 +3,13 @@
     <PropertyGroup>
         <TargetFramework>net5.0-windows</TargetFramework>
         <LangVersion>10.0</LangVersion>
-        <Version>1.0.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Nullable>enable</Nullable>
+        <Version>1.1.0</Version>
+        <PackageVersion>1.1.0</PackageVersion>
+        <AssemblyVersion>1.1.0</AssemblyVersion>
+        <FileVersion>1.1.0</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup>
