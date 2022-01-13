@@ -23,7 +23,6 @@ internal class LoginQueueHandler : IDisposable
         {
             var duration = DateTime.Now - Client.QueueEntryTime;
             PluginLog.Log($"Login queue took {duration}");
-            PluginLog.Log($"Login queue took {duration}");
             Client.ExitQueue(QueueExit.QueueExitReason.Success);
         }
 
