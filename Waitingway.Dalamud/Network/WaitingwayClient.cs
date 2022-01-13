@@ -231,8 +231,10 @@ public class WaitingwayClient : IAsyncDisposable
         }
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
+        await SendAsync(new ClientGoodbye());
+
         CheckDisposed();
         IsDisposed = true;
 
@@ -244,7 +246,7 @@ public class WaitingwayClient : IAsyncDisposable
         _cancellationTokenSource.Dispose();
         GC.SuppressFinalize(this);
 
-        return _connection.DisposeAsync();
+        await _connection.DisposeAsync();
     }
 
     public void Send(IPacket packet)

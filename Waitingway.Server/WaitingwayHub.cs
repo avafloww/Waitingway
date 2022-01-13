@@ -2,6 +2,7 @@
 using Waitingway.Protocol;
 using Waitingway.Protocol.Clientbound;
 using Waitingway.Protocol.Serverbound;
+using Waitingway.Server.Client;
 using Waitingway.Server.Models;
 
 namespace Waitingway.Server;
@@ -28,21 +29,41 @@ public class WaitingwayHub : Hub
     public override Task OnDisconnectedAsync(Exception? exception)
     {
         _logger.LogInformation("connection {} closed", Context.ConnectionId);
-        // todo: persist client for X time until removed with a sweep
-        _manager.Remove(Context.ConnectionId);
-        return base.OnDisconnectedAsync(exception);
+        try
+        {
+            var client = _manager.GetClientForConnection(Context.ConnectionId);
+            _manager.Disconnect(Context.ConnectionId, client);
+        }
+        catch (Exception)
+        {
+            // just remove now, if they were never properly connected
+            _manager.Remove(Context.ConnectionId);
+        }
+
+        return Task.CompletedTask;
     }
 
     public async Task ClientHello(ClientHello packet)
     {
         _logger.LogInformation("connection {} identified as client {}", Context.ConnectionId, packet.ClientId);
-        _manager.Add(Context.ConnectionId, new Client {Id = packet.ClientId, PluginVersion = packet.PluginVersion});
+        _manager.Add(Context.ConnectionId, new Client.Client {Id = packet.ClientId, PluginVersion = packet.PluginVersion, Active = true});
         await Send(new ServerHello());
     }
 
     public void ClientGoodbye(ClientGoodbye packet)
     {
-        _manager.Remove(Context.ConnectionId);
+        try
+        {
+            var client = _manager.GetClientForConnection(Context.ConnectionId);
+
+            // mark the client as having cleanly disconnected
+            client.Active = false;
+        }
+        catch (Exception)
+        {
+            // they were never properly connected to start with, so just abort the connection
+        }
+
         Context.Abort();
     }
 

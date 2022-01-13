@@ -1,6 +1,6 @@
 ﻿using Waitingway.Server.Models;
 
-namespace Waitingway.Server;
+namespace Waitingway.Server.Client;
 
 public class ClientQueue
 {

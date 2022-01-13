@@ -22,7 +22,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="EXD" />
       <Folder Include="Migrations" />
     </ItemGroup>
 
