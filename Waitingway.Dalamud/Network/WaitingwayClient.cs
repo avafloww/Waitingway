@@ -208,8 +208,6 @@ public class WaitingwayClient : IAsyncDisposable
 
     private void ResetQueue()
     {
-        CheckDisposed();
-
         QueueEntryTime = null;
         QueueType = QueueType.None;
         QueuePosition = -1;
