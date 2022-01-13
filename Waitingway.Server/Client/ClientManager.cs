@@ -46,7 +46,7 @@ public class ClientManager
         lock (Lock)
         {
             foreach (var dc in DisconnectedClients.Values.Where(dc =>
-                         DateTime.UtcNow.Subtract(dc.DisconnectedAt).TotalMinutes >= 2))
+                         DateTime.UtcNow.Subtract(dc.DisconnectedAt).TotalMinutes >= 15))
             {
                 _logger.LogInformation("[{}] reaping disconnected client", dc.Client.Id);
                 DisconnectedClients.Remove(dc.Client.Id);
