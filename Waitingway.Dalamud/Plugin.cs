@@ -44,6 +44,7 @@ public class Plugin : IDalamudPlugin
 
     internal GameHooks Hooks { get; }
     private LoginQueueHandler LoginQueueHandler { get; }
+    private IpcSystem IpcSystem { get; }
 
 #pragma warning disable CS8618
 #pragma warning disable CS8602
@@ -57,6 +58,7 @@ public class Plugin : IDalamudPlugin
 
         Hooks = new GameHooks(this, SigScanner!);
         Client = new WaitingwayClient(this, Config.RemoteServer, Config.ClientId, PluginInterface.UiLanguage);
+        IpcSystem = new IpcSystem(this);
 
         Ui = new PluginUi(this);
 
@@ -135,6 +137,7 @@ public class Plugin : IDalamudPlugin
         }
 
         LoginQueueHandler.Dispose();
+        IpcSystem.Dispose();
         Client.DisposeAsync();
 
         Ui.Dispose();

@@ -88,10 +88,7 @@ public class GameHooks : IDisposable
                 }
                 else
                 {
-                    Client.Send(new QueueStatusUpdate
-                    {
-                        QueuePosition = (uint) lobbyStatus->queueLength
-                    });
+                    Client.UpdateQueuePosition(lobbyStatus->queueLength);
                 }
             }
         }

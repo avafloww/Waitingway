@@ -27,6 +27,9 @@ public class WaitingwayClient : IAsyncDisposable
     public ushort DataCenterId { get; private set; }
     public ushort WorldId { get; private set; }
     public DateTime? QueueEntryTime { get; private set; }
+    public QueueType QueueType { get; private set; } = QueueType.None;
+    public int QueuePosition { get; private set; } = -1;
+    public TimeSpan? QueueEstimate { get; private set; }
 
     public bool InQueue => QueueEntryTime != null;
 
@@ -114,6 +117,7 @@ public class WaitingwayClient : IAsyncDisposable
         PluginLog.LogDebug("Received QueueStatusEstimate packet");
 #endif
         _plugin.Ui.QueueText = packet.LocalisedMessages;
+        QueueEstimate = packet.EstimatedTime;
     }
 
     private async Task OnReconnect(string? _)
@@ -172,6 +176,7 @@ public class WaitingwayClient : IAsyncDisposable
         CheckDisposed();
         Debug.Assert(QueueEntryTime != null);
         QueueEntryTime = null;
+        QueueType = QueueType.None;
         Send(new QueueExit {Reason = reason});
     }
 
@@ -179,6 +184,7 @@ public class WaitingwayClient : IAsyncDisposable
     {
         CheckDisposed();
         Debug.Assert(QueueEntryTime == null);
+        QueueType = QueueType.Login;
         QueueEntryTime = DateTime.Now;
         Send(new LoginQueueEnter(
             _plugin.Config.ClientId,
@@ -189,14 +195,34 @@ public class WaitingwayClient : IAsyncDisposable
         ));
     }
 
+    // todo: this function is kinda jank but chara select logic needs it, fix this eventually
     internal void ResetLoginQueue(ulong characterId, ushort dataCenterId, ushort worldId)
     {
         CheckDisposed();
 
-        QueueEntryTime = null;
+        ResetQueue();
         CharacterId = characterId;
         DataCenterId = dataCenterId;
         WorldId = worldId;
+    }
+
+    private void ResetQueue()
+    {
+        CheckDisposed();
+
+        QueueEntryTime = null;
+        QueueType = QueueType.None;
+        QueuePosition = -1;
+        QueueEstimate = null;
+    }
+
+    internal void UpdateQueuePosition(int position)
+    {
+        QueuePosition = position;
+        if (position >= 0)
+        {
+            Send(new QueueStatusUpdate {QueuePosition = (uint) position});
+        }
     }
 
     private void CheckDisposed()
@@ -211,6 +237,8 @@ public class WaitingwayClient : IAsyncDisposable
     {
         CheckDisposed();
         IsDisposed = true;
+
+        ResetQueue();
 
         _plugin.PluginInterface.LanguageChanged -= LanguageChanged;
 
