@@ -56,6 +56,11 @@ public class WaitingwayHub : Hub
         // todo: to be removed in a future protocol version, because we can't reliably send shit on game shutdown
     }
 
+    public void ClientLanguageChange(ClientLanguageChange packet)
+    {
+        // todo: implement this
+    }
+
     public void LoginQueueEnter(LoginQueueEnter packet)
     {
         var client = _manager.GetClientForConnection(Context.ConnectionId);

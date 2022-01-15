@@ -43,7 +43,7 @@ public class ClientManager
             {
                 if (DisconnectedClients.ContainsKey(client.Id))
                 {
-                    _logger.LogWarning("duplicate queue session for client {}, using the newer one");
+                    _logger.LogWarning("duplicate queue session for client {}, using the newer one", client.Id);
                     var old = DisconnectedClients[client.Id];
                     if (old.Client.Queue?.LastUpdateReceived < client.Queue?.LastUpdateReceived)
                     {
