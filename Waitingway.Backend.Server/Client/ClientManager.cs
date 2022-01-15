@@ -1,4 +1,6 @@
-﻿namespace Waitingway.Server.Client;
+﻿using Waitingway.Backend.Database;
+
+namespace Waitingway.Backend.Server.Client;
 
 public class ClientManager
 {
@@ -35,9 +37,9 @@ public class ClientManager
     public async Task Restore()
     {
         _logger.LogInformation("queued session restore");
-        await foreach (var raqs in _db.RecentlyActiveQueueSessions.AsAsyncEnumerable())
+        await foreach (var ra in _db.RecentlyActiveQueueSessions.AsAsyncEnumerable())
         {
-            var client = raqs.ToClient();
+            var client = Client.From(ra);
             _logger.LogInformation("restoring queue session for client: {}", client.Id);
             lock (Lock)
             {

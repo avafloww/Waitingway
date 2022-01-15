@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Waitingway.Server;
-using Waitingway.Server.Client;
+using Waitingway.Backend.Database;
+using Waitingway.Backend.Server;
+using Waitingway.Backend.Server.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();

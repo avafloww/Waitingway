@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Waitingway.Server.Models;
+using Waitingway.Backend.Database.Models;
 
-namespace Waitingway.Server;
+namespace Waitingway.Backend.Database;
 
 public class WaitingwayContext : DbContext
 {

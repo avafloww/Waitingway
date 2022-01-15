@@ -1,4 +1,4 @@
-﻿namespace Waitingway.Server.Client;
+﻿namespace Waitingway.Backend.Server.Client;
 
 public class ClientReaperService : IHostedService
 {

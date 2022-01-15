@@ -1,9 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using Waitingway.Protocol.Serverbound;
 
-namespace Waitingway.Server.Models;
+namespace Waitingway.Backend.Database.Models;
 
 [Index(nameof(Time), nameof(Type))]
 public class QueueSessionData
@@ -20,7 +19,7 @@ public class QueueSessionData
     [Required] public DataType Type { get; set; }
 
     // only set when Type == End
-    public QueueExit.QueueExitReason? EndReason { get; set; }
+    public QueueEndReason? EndReason { get; set; }
 
     // next attributes are set only when Type == Update
     public uint? QueuePosition { get; set; }
@@ -32,5 +31,13 @@ public class QueueSessionData
         Start = 0,
         Update = 1,
         End = 2
+    }
+    
+    public enum QueueEndReason
+    {
+        Unknown = 0,
+        Success = 1,
+        Error = 2,
+        UserCancellation = 3
     }
 }

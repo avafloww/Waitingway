@@ -1,11 +1,11 @@
-name: Deploy Waitingway.Server
+name: Deploy Waitingway.Backend.Server
 on: 
   push:
     branches:
     - main
     paths:
-    - 'Waitingway.Common/**'
-    - 'Waitingway.Server/**'
+    - 'Waitingway.Protocol/**'
+    - 'Waitingway.Backend.Server/**'
 
 jobs:
   build:
@@ -17,7 +17,7 @@ jobs:
       with:
         dotnet-version: '6.0.x'
     - name: dotnet publish
-      run: dotnet publish Waitingway.Server -c Release -o deploy -r linux-x64
+      run: dotnet publish Waitingway.Backend.Server -c Release -o deploy -r linux-x64
     - name: SCP Command to Transfer Files
       uses: appleboy/scp-action@v0.1.2
       with:
@@ -25,7 +25,7 @@ jobs:
         username: ${{ secrets.REMOTE_USER }}
         key: ${{ secrets.REMOTE_SSH_KEY }}
         source: 'deploy/*'
-        target: '/var/www/waitingway'
+        target: '/opt/waitingway/server'
         strip_components: 1
     - name: SSH Remote Commands
       uses: appleboy/ssh-action@v0.1.4

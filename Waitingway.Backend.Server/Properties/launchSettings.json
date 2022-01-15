@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "Waitingway.Server": {
+    "Waitingway.Backend.Server": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": false,

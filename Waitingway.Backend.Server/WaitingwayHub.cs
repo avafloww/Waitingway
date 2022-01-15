@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Waitingway.Backend.Database;
+using Waitingway.Backend.Database.Models;
+using Waitingway.Backend.Server.Client;
 using Waitingway.Protocol;
 using Waitingway.Protocol.Clientbound;
 using Waitingway.Protocol.Serverbound;
-using Waitingway.Server.Client;
-using Waitingway.Server.Models;
 
-namespace Waitingway.Server;
+namespace Waitingway.Backend.Server;
 
 public class WaitingwayHub : Hub
 {
@@ -86,7 +87,7 @@ public class WaitingwayHub : Hub
                 Session = client.Queue.DbSession,
                 Type = QueueSessionData.DataType.End,
                 // assume user cancellation
-                EndReason = Protocol.Serverbound.QueueExit.QueueExitReason.UserCancellation,
+                EndReason = QueueSessionData.QueueEndReason.UserCancellation,
                 Time = DateTime.UtcNow
             };
 
@@ -140,7 +141,7 @@ public class WaitingwayHub : Hub
         {
             Session = client.Queue.DbSession,
             Type = QueueSessionData.DataType.End,
-            EndReason = packet.Reason,
+            EndReason = (QueueSessionData.QueueEndReason) packet.Reason,
             Time = DateTime.UtcNow
         };
 

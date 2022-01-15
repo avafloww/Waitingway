@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Waitingway.Server.Migrations
+namespace Waitingway.Backend.Database.Migrations
 {
     public partial class AddVersionToQueueSession : Migration
     {

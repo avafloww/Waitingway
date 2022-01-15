@@ -1,6 +1,6 @@
-﻿using Waitingway.Server.Models;
+﻿using Waitingway.Backend.Database.Models;
 
-namespace Waitingway.Server.Client;
+namespace Waitingway.Backend.Server.Client;
 
 public class ClientQueue
 {

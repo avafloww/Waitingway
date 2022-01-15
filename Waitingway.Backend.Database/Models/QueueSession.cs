@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace Waitingway.Server.Models;
+namespace Waitingway.Backend.Database.Models;
 
 [Index(nameof(DataCenter), nameof(World))]
 public class QueueSession

@@ -2,9 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Dalamud", "Waitingway.Dalamud\Waitingway.Dalamud.csproj", "{A4F76A9D-F28A-47A1-86F5-894869AE93C6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Server", "Waitingway.Server\Waitingway.Server.csproj", "{2DCF49CE-0377-4412-A243-25FED5580680}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Backend.Server", "Waitingway.Backend.Server\Waitingway.Backend.Server.csproj", "{2DCF49CE-0377-4412-A243-25FED5580680}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Protocol", "Waitingway.Protocol\Waitingway.Protocol.csproj", "{B2B39B0F-774B-4309-817E-ACFA2F1D8ACE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waitingway.Backend.Database", "Waitingway.Backend.Database\Waitingway.Backend.Database.csproj", "{F74401C7-CD34-47B4-A6ED-BA00649F86BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,5 +26,9 @@ Global
 		{B2B39B0F-774B-4309-817E-ACFA2F1D8ACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2B39B0F-774B-4309-817E-ACFA2F1D8ACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2B39B0F-774B-4309-817E-ACFA2F1D8ACE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F74401C7-CD34-47B4-A6ED-BA00649F86BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F74401C7-CD34-47B4-A6ED-BA00649F86BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F74401C7-CD34-47B4-A6ED-BA00649F86BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F74401C7-CD34-47B4-A6ED-BA00649F86BC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
