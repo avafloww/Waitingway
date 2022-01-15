@@ -27,7 +27,7 @@ namespace Waitingway.Server.Migrations
                       from ""QueueSessions"" s,
                            ""QueueSessionData"" d
                       where s.""Id"" = d.""SessionId""
-                        and d.""Time"" >= 'now'::timestamp - '15 minutes'::interval
+                        and d.""Time"" >= now() - '15 minutes'::interval
                       group by s.""Id"", d.""Time"", d.""Id""
                       order by s.""Id"", d.""Time"" desc) a
                 where a.""Type"" < 2;
