@@ -2,6 +2,7 @@
 using Dalamud.Game;
 using Dalamud.Hooking;
 using Dalamud.Logging;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Siggingway;
 using Waitingway.Dalamud.Network;
 using Waitingway.Dalamud.Structs;
@@ -9,20 +10,19 @@ using Waitingway.Protocol.Serverbound;
 
 namespace Waitingway.Dalamud;
 
-public class GameHooks : IDisposable
+public unsafe class GameHooks : IDisposable
 {
     [Signature(
         "48 89 5C 24 ?? 57 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 84 24 ?? ?? ?? ?? 8B 41 10 48 8D 7A 10",
         DetourName = nameof(LobbyStatusUpdateDetour))]
     private Hook<OnLobbyErrorCode> LobbyStatusHook { get; init; } = null!;
 
-    [Signature("40 ?? 55 57 48 81 ?? ?? ?? ?? ?? 48 8B ?? ?? ?? ?? ?? 48 33 ?? ?? 89 ?? ?? ?? 0F B7",
-        DetourName = nameof(SelectYesNoEventDetour))]
-    private Hook<OnSelectYesNoEvent> SelectYesNoHook { get; init; } = null!;
+    [Signature("40 55 56 57 41 54 41 55 48 8D AC 24 ?? ?? ?? ??", DetourName = nameof(AgentLobbyVf0Detour))]
+    private Hook<AgentLobbyVf0> AgentLobbyVf0Hook { get; init; } = null!;
 
     private delegate IntPtr OnLobbyErrorCode(IntPtr a1, IntPtr a2);
 
-    private delegate IntPtr OnSelectYesNoEvent(IntPtr atkUnit, ushort eventType, int which, IntPtr source, IntPtr data);
+    private delegate IntPtr AgentLobbyVf0(AgentLobby* agent, IntPtr a2, IntPtr a3, IntPtr a4, int action);
 
     public bool IsDisposed { get; private set; }
 
@@ -33,20 +33,9 @@ public class GameHooks : IDisposable
     {
         Plugin = plugin;
         Siggingway.Siggingway.Initialise(sigScanner, this);
-        
-        LobbyStatusHook.Enable();
-        // don't enable yesno here, we only enable it while the SelectYesno we want to watch is on screen
-    }
 
-    internal void ToggleSelectYesNoHook(bool state)
-    {
-        if (!state && SelectYesNoHook.IsEnabled)
-        {
-            SelectYesNoHook.Disable();
-        } else if (state && !SelectYesNoHook.IsEnabled)
-        {
-            SelectYesNoHook.Enable();
-        }
+        LobbyStatusHook.Enable();
+        AgentLobbyVf0Hook.Enable();
     }
 
     protected virtual void Dispose(bool disposing)
@@ -59,7 +48,7 @@ public class GameHooks : IDisposable
         if (disposing)
         {
             LobbyStatusHook.Dispose();
-            SelectYesNoHook.Dispose();
+            AgentLobbyVf0Hook.Dispose();
         }
 
         IsDisposed = true;
@@ -71,7 +60,7 @@ public class GameHooks : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    internal unsafe IntPtr LobbyStatusUpdateDetour(IntPtr a1, IntPtr a2)
+    internal IntPtr LobbyStatusUpdateDetour(IntPtr a1, IntPtr a2)
     {
         try
         {
@@ -100,30 +89,19 @@ public class GameHooks : IDisposable
         return LobbyStatusHook.Original(a1, a2);
     }
 
-    internal IntPtr SelectYesNoEventDetour(IntPtr atkUnit, ushort eventType, int which, IntPtr source,
-        IntPtr data)
+    internal IntPtr AgentLobbyVf0Detour(AgentLobby* agent, IntPtr a2, IntPtr a3, IntPtr a4, int action)
     {
-        try
+        // as of 6.05: action is 0x03 immediately after confirming login, and 0x22 immediately after confirming login queue cancellation
+        if (action == 0x03) // confirm login
         {
-            if (eventType == 0x19 && which == 0) // EventType.Change, Yes button
-            {
-                if (Client.InQueue)
-                {
-                    PluginLog.Log("Sending QueueExit due to user cancellation of login queue");
-                    Client.ExitQueue(QueueExit.QueueExitReason.UserCancellation);
-                }
-                else if (Plugin.GameGui.GetAddonByName("CharaSelect", 1) != IntPtr.Zero)
-                {
-                    // logging in with a character, assuming CharaSelect is up...
-                    Client.EnterLoginQueue();
-                }
-            }
+            Client.EnterLoginQueue();
         }
-        catch (Exception ex)
+        else if (action == 0x22) // cancel login queue
         {
-            PluginLog.Error($"Exception in SelectYesNoEventDetour: {ex}");
+            PluginLog.Log("Sending QueueExit due to user cancellation of login queue");
+            Client.ExitQueue(QueueExit.QueueExitReason.UserCancellation);
         }
 
-        return SelectYesNoHook.Original(atkUnit, eventType, which, source, data);
+        return AgentLobbyVf0Hook.Original(agent, a2, a3, a4, action);
     }
 }

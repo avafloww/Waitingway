@@ -99,11 +99,6 @@ public class Plugin : IDalamudPlugin
             );
         }
 
-        var yesno = GameGui.GetAddonByName("SelectYesno", 1);
-
-        // hook onto yesno dialogs for both exit queue and character select confirmation
-        Hooks.ToggleSelectYesNoHook(!ClientState.IsLoggedIn && yesno != IntPtr.Zero);
-
         // are we currently in a login attempt?
         if (Client.InQueue)
         {
@@ -111,6 +106,7 @@ public class Plugin : IDalamudPlugin
             if (addon != IntPtr.Zero)
             {
                 // if the "exit queue?" dialog is on screen, attach to that instead
+                var yesno = GameGui.GetAddonByName("SelectYesno", 1);
                 if (yesno != IntPtr.Zero)
                 {
                     addon = yesno;

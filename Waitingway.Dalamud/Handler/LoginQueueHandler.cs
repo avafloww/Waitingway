@@ -25,9 +25,6 @@ internal class LoginQueueHandler : IDisposable
             PluginLog.Log($"Login queue took {duration}");
             Client.ExitQueue(QueueExit.QueueExitReason.Success);
         }
-
-        // we don't want to hook yesno dialogs ingame
-        Plugin.Hooks.ToggleSelectYesNoHook(false);
     }
     
     protected virtual void Dispose(bool disposing)
