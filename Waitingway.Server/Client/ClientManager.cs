@@ -41,6 +41,20 @@ public class ClientManager
             _logger.LogInformation("restoring queue session for client: {}", client.Id);
             lock (Lock)
             {
+                if (DisconnectedClients.ContainsKey(client.Id))
+                {
+                    _logger.LogWarning("duplicate queue session for client {}, using the newer one");
+                    var old = DisconnectedClients[client.Id];
+                    if (old.Client.Queue?.LastUpdateReceived < client.Queue?.LastUpdateReceived)
+                    {
+                        DisconnectedClients.Remove(client.Id);
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
                 DisconnectedClients.Add(client.Id, new DisconnectedClient {Client = client});
             }
         }
