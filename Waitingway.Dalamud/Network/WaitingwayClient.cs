@@ -10,7 +10,7 @@ using Waitingway.Protocol.Serverbound;
 
 namespace Waitingway.Dalamud.Network;
 
-public class WaitingwayClient : IAsyncDisposable
+public class WaitingwayClient : IDisposable
 {
     private readonly Plugin _plugin;
     private readonly string _clientId;
@@ -231,10 +231,8 @@ public class WaitingwayClient : IAsyncDisposable
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public void Dispose()
     {
-        await SendAsync(new ClientGoodbye());
-
         CheckDisposed();
         IsDisposed = true;
 
@@ -244,9 +242,8 @@ public class WaitingwayClient : IAsyncDisposable
 
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
-        GC.SuppressFinalize(this);
 
-        await _connection.DisposeAsync();
+        _connection.DisposeAsync();
     }
 
     public void Send(IPacket packet)

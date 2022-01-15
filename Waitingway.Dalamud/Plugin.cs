@@ -135,7 +135,8 @@ public class Plugin : IDalamudPlugin
 
         LoginQueueHandler.Dispose();
         IpcSystem.Dispose();
-        Client.DisposeAsync();
+
+        Client.Dispose();
 
         Ui.Dispose();
 
