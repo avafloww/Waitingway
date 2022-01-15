@@ -37,7 +37,12 @@ public class ClientManager
         _logger.LogInformation("queued session restore");
         await foreach (var raqs in _db.RecentlyActiveQueueSessions.AsAsyncEnumerable())
         {
-            _logger.LogInformation("raqs: {}", raqs);
+            var client = raqs.ToClient();
+            _logger.LogInformation("restoring queue session for client: {}", client.Id);
+            lock (Lock)
+            {
+                DisconnectedClients.Add(client.Id, new DisconnectedClient {Client = client});
+            }
         }
     }
 
@@ -74,8 +79,6 @@ public class ClientManager
                 _logger.LogInformation("[{}] client has reconnected", dc.Client.Id);
 
                 Clients[client.Id] = dc.Client;
-
-                // todo: if session hash is not the same, cancel existing queue
             }
             else
             {
@@ -89,9 +92,9 @@ public class ClientManager
 
     public void Disconnect(string connectionId, Client client)
     {
-        if (!client.Active)
+        if (!client.InQueue)
         {
-            // client has told us goodbye, remove them immediately
+            // client was not in queue, remove them immediately
             Remove(connectionId);
         }
         else
@@ -99,7 +102,7 @@ public class ClientManager
             // non-graceful disconnect, add to DisconnectedClients first
             lock (Lock)
             {
-                _logger.LogInformation("[{}] client disconnected abruptly, tracking disconnection", client.Id);
+                _logger.LogInformation("[{}] client disconnected while in queue, waiting to remove", client.Id);
                 DisconnectedClients.Add(client.Id, new DisconnectedClient {Client = client});
                 Remove(connectionId);
             }

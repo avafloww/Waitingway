@@ -12,11 +12,10 @@ public class ClientQueue
         set
         {
             _queuePosition = value;
-            LastUpdateReceived = DateTime.Now;
+            LastUpdateReceived = DateTime.UtcNow;
         }
     }
 
     public QueueSession DbSession { get; init; }
-    public DateTime EntryTime { get; } = DateTime.Now;
-    public DateTime LastUpdateReceived { get; set; } = DateTime.Now;
+    public DateTime LastUpdateReceived { get; set; } = DateTime.UtcNow;
 }

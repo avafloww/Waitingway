@@ -15,8 +15,7 @@ app.MapHub<WaitingwayHub>("");
 await using (var scope = app.Services.CreateAsyncScope())
 {
     // restore existing clients before we start accepting connections
-    // todo: enable when this is ready
-    // await scope.ServiceProvider.GetRequiredService<ClientManager>().Restore();
+    await scope.ServiceProvider.GetRequiredService<ClientManager>().Restore();
 }
 
 await app.RunAsync();
