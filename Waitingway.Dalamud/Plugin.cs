@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Gui;
@@ -18,6 +19,7 @@ namespace Waitingway.Dalamud;
 public class Plugin : IDalamudPlugin
 {
     public string Name => "Waitingway";
+    public string Version { get; }
 
     [PluginService]
     [RequiredVersion("1.0")]
@@ -52,6 +54,10 @@ public class Plugin : IDalamudPlugin
     [SuppressMessage("ReSharper", "ExpressionIsAlwaysNull")]
     public Plugin()
     {
+        // 4-component versions need to go die in a fire
+        var vers = typeof(Plugin).Assembly.GetName().Version?.ToString();
+        Version = vers == null ? "unknown" : string.Join(".", vers.Split(".").SkipLast(1));
+
         Config = PluginInterface!.GetPluginConfig() as Configuration ?? new Configuration();
         Config.Initialize(PluginInterface);
         Config.Save(); // save immediately in case we generated a new client ID

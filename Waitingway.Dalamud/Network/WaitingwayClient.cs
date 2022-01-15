@@ -151,7 +151,7 @@ public class WaitingwayClient : IDisposable
         {
             ProtocolVersion = 1,
             ClientId = _clientId,
-            PluginVersion = typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "unknown",
+            PluginVersion = _plugin.Version,
             Language = _language
         });
     }

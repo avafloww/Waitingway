@@ -12,7 +12,6 @@ namespace Waitingway.Dalamud.Gui;
 
 internal class LoginQueueWindow
 {
-    private readonly string _version = typeof(Plugin).Assembly.GetName().Version?.ToString() ?? "unknown";
     private readonly PluginUi _ui;
     private float _posX;
     private float _posY;
@@ -50,7 +49,7 @@ internal class LoginQueueWindow
         _ui.DrawQueueText();
 
         ImGui.Separator();
-        ImGui.Text($"Waitingway version {_version} (alpha)");
+        ImGui.Text($"Waitingway version {_ui.Plugin.Version} (alpha)");
         ImGui.SameLine();
 
         if (ImGuiComponents.IconButton(FontAwesomeIcon.Globe))
@@ -68,9 +67,26 @@ internal class LoginQueueWindow
                 PluginLog.LogError($"Failed to open website: {ex}");
             }
         }
+        ImGui.SameLine();
+        // todo: replace with Discord icon once fixed in Dalamud
+        if (ImGuiComponents.IconButton(FontAwesomeIcon.Comments))
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://waitingway.com/discord",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                PluginLog.LogError($"Failed to open website: {ex}");
+            }
+        }
 
         ImGui.TextColored(ImGuiColors.DalamudGrey,
-            "Please report any bugs on the support Discord (the globe icon above).");
+            "Please report any bugs on the support Discord.");
         ImGui.End();
     }
 
