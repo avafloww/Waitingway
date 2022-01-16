@@ -33,4 +33,4 @@ jobs:
         host: ${{ secrets.REMOTE_HOST }}
         username: ${{ secrets.REMOTE_USER }}
         key: ${{ secrets.REMOTE_SSH_KEY }}
-        script: sudo /usr/sbin/waitingway-deploy
+        script: sudo /opt/waitingway/deploy-server
