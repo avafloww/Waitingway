@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Waitingway.Backend.Database\Waitingway.Backend.Database.csproj" />
+      <ProjectReference Include="..\Waitingway.Protocol\Waitingway.Protocol.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Migrations" />
+      <Folder Include="Models" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="EXD\WorldDCGroupType.csv" />
+    </ItemGroup>
+
+</Project>
