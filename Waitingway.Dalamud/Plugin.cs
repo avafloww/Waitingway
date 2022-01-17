@@ -99,9 +99,7 @@ public class Plugin : IDalamudPlugin
             Client.ResetLoginQueue(
                 agentLobby->SelectedCharacterId,
                 agentLobby->DataCenter,
-                // todo: once Dalamud includes the latest clientstructs
-                // agentLobby->WorldId
-                *(ushort*) ((byte*) agentLobby + 0x824)
+                agentLobby->WorldId
             );
         }
 
