@@ -197,6 +197,7 @@ public class QueueManager
         Debug.Assert(client != null);
 
         var queue = GetQueue(client);
+        queue.QueuePosition = queuePosition;
         var sessionData = new QueueSessionData
         {
             Session = queue.DbSession,
