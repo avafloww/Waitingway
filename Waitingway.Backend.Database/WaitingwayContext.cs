@@ -8,6 +8,7 @@ public class WaitingwayContext : DbContext
     public DbSet<QueueSession> QueueSessions { get; set; }
     public DbSet<QueueSessionData> QueueSessionData { get; set; }
     public DbSet<RecentlyActiveQueueSession> RecentlyActiveQueueSessions { get; set; }
+    public DbSet<DiscordLinkInfo> DiscordLinkInfo { get; set; }
 
     public WaitingwayContext(DbContextOptions options) : base(options)
     {
