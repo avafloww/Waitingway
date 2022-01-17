@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace Waitingway.Backend.Database.Models;
 
@@ -24,9 +25,9 @@ public class QueueSession
 
     /** only applicable for Duty session type */
     public int? DutyContentId { get; set; }
-    
-    public List<QueueSessionData> DataPoints { get; set; }
-    
+
+    [JsonIgnore] public List<QueueSessionData> DataPoints { get; set; }
+
     public string PluginVersion { get; set; }
 
     public enum Type
