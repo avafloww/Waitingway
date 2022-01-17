@@ -1,6 +1,7 @@
 ﻿using StackExchange.Redis;
 using Waitingway.Backend.Database;
 using Waitingway.Backend.Database.Models;
+using Waitingway.Backend.Database.Queue;
 using Waitingway.Backend.Server.Queue;
 
 namespace Waitingway.Backend.Server.Client;
@@ -56,6 +57,7 @@ public class ClientManager
             
             var queue = new ClientQueue
             {
+                ClientId = ra.ClientId,
                 DbSession = new QueueSession
                 {
                     Id = ra.Id,

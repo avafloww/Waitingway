@@ -2,7 +2,7 @@
 using StackExchange.Redis;
 using Waitingway.Backend.Database;
 using Waitingway.Backend.Database.Models;
-using Waitingway.Backend.Server.Client;
+using Waitingway.Backend.Database.Queue;
 using Waitingway.Protocol.Serverbound;
 
 namespace Waitingway.Backend.Server.Queue;
@@ -145,8 +145,18 @@ public class QueueManager
         _db.QueueSessionData.Add(sessionData);
         _db.SaveChanges();
 
-        var queue = new ClientQueue {QueuePosition = 0, DbSession = session};
+        var queue = new ClientQueue
+        {
+            ClientId = Guid.Parse(client.Id),
+            QueuePosition = 0,
+            DbSession = session
+        };
         DoEnterQueue(client, queue);
+
+        var rc = _redis.GetDatabase();
+        var json = queue.ToJson();
+        rc.StringSet($"client:{client.Id}:queue", json);
+        rc.Publish("queue:enter", json);
 
         _logger.LogInformation("[{}] entered login queue (DbSessionId = {})", client.Id, queue.DbSession.Id);
     }
@@ -175,6 +185,10 @@ public class QueueManager
         _db.QueueSessionData.Add(sessionData);
         _db.SaveChanges();
 
+        var rc = _redis.GetDatabase();
+        rc.KeyDelete($"client:{client.Id}:queue");
+        rc.Publish("queue:exit", queue.ToJson());
+
         _logger.LogInformation("[{}] left queue (DbSessionId = {})", client.Id, queue.DbSession.Id);
     }
 
@@ -194,5 +208,10 @@ public class QueueManager
         _db.QueueSessions.Attach(sessionData.Session);
         _db.QueueSessionData.Add(sessionData);
         _db.SaveChanges();
+
+        var rc = _redis.GetDatabase();
+        var json = queue.ToJson();
+        rc.StringSet($"client:{client.Id}:queue", json);
+        rc.Publish("queue:update", json);
     }
 }

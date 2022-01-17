@@ -1,6 +1,4 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using StackExchange.Redis;
-using Waitingway.Backend.Database;
 using Waitingway.Backend.Database.Models;
 using Waitingway.Backend.Server.Client;
 using Waitingway.Backend.Server.Queue;
@@ -14,17 +12,12 @@ public class WaitingwayHub : Hub
 {
     private readonly ILogger<WaitingwayHub> _logger;
     private readonly ClientManager _clientManager;
-    private readonly WaitingwayContext _db;
-    private readonly ConnectionMultiplexer _redis;
     private readonly QueueManager _queueManager;
 
-    public WaitingwayHub(ILogger<WaitingwayHub> logger, ClientManager clientManager, WaitingwayContext db,
-        ConnectionMultiplexer redis, QueueManager queueManager)
+    public WaitingwayHub(ILogger<WaitingwayHub> logger, ClientManager clientManager, QueueManager queueManager)
     {
         _logger = logger;
         _clientManager = clientManager;
-        _db = db;
-        _redis = redis;
         _queueManager = queueManager;
     }
 
