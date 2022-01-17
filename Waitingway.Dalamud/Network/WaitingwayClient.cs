@@ -149,7 +149,7 @@ public class WaitingwayClient : IDisposable
         CheckDisposed();
         await SendAsync(new ClientHello
         {
-            ProtocolVersion = 1,
+            ProtocolVersion = WaitingwayProtocol.Version,
             ClientId = _clientId,
             PluginVersion = _plugin.Version,
             Language = _language

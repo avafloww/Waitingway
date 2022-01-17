@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using StackExchange.Redis;
 using Waitingway.Backend.Database;
 using Waitingway.Backend.Database.Models;
 using Waitingway.Backend.Server.Client;
+using Waitingway.Backend.Server.Queue;
 using Waitingway.Protocol;
 using Waitingway.Protocol.Clientbound;
 using Waitingway.Protocol.Serverbound;
@@ -11,14 +13,19 @@ namespace Waitingway.Backend.Server;
 public class WaitingwayHub : Hub
 {
     private readonly ILogger<WaitingwayHub> _logger;
-    private readonly ClientManager _manager;
+    private readonly ClientManager _clientManager;
     private readonly WaitingwayContext _db;
+    private readonly ConnectionMultiplexer _redis;
+    private readonly QueueManager _queueManager;
 
-    public WaitingwayHub(ILogger<WaitingwayHub> logger, ClientManager manager, WaitingwayContext db)
+    public WaitingwayHub(ILogger<WaitingwayHub> logger, ClientManager clientManager, WaitingwayContext db,
+        ConnectionMultiplexer redis, QueueManager queueManager)
     {
         _logger = logger;
-        _manager = manager;
+        _clientManager = clientManager;
         _db = db;
+        _redis = redis;
+        _queueManager = queueManager;
     }
 
     public override Task OnConnectedAsync()
@@ -32,13 +39,13 @@ public class WaitingwayHub : Hub
         _logger.LogInformation("connection {} closed", Context.ConnectionId);
         try
         {
-            var client = _manager.GetClientForConnection(Context.ConnectionId);
-            _manager.Disconnect(Context.ConnectionId, client);
+            var client = _clientManager.GetClientForConnection(Context.ConnectionId);
+            _clientManager.Disconnect(Context.ConnectionId, client);
         }
         catch (Exception)
         {
             // just remove now, if they were never properly connected
-            _manager.Remove(Context.ConnectionId);
+            _clientManager.RemoveConnection(Context.ConnectionId);
         }
 
         return Task.CompletedTask;
@@ -46,8 +53,21 @@ public class WaitingwayHub : Hub
 
     public async Task ClientHello(ClientHello packet)
     {
+        if (packet.ProtocolVersion != WaitingwayProtocol.Version)
+        {
+            _logger.LogInformation("disconnecting connection {}: invalid protocol version received {}",
+                Context.ConnectionId, packet.ProtocolVersion);
+            await Send(new ServerGoodbye
+            {
+                Message = "Your version of Waitingway is outdated. Please update to the latest version."
+            });
+
+            Context.Abort();
+            return;
+        }
+
         _logger.LogInformation("connection {} identified as client {}", Context.ConnectionId, packet.ClientId);
-        _manager.Add(Context.ConnectionId,
+        _clientManager.Add(Context.ConnectionId,
             new Client.Client {Id = packet.ClientId, PluginVersion = packet.PluginVersion});
         await Send(new ServerHello());
     }
@@ -64,120 +84,28 @@ public class WaitingwayHub : Hub
 
     public void LoginQueueEnter(LoginQueueEnter packet)
     {
-        var client = _manager.GetClientForConnection(Context.ConnectionId);
+        var client = _clientManager.GetClientForConnection(Context.ConnectionId);
         _logger.LogDebug("[{}] LoginQueueEnter: {}", client.Id, packet);
 
-        if (client.Queue != null)
-        {
-            if (client.Queue.DbSession.ClientSessionId == packet.SessionId
-                || client.Queue.DbSession.World == packet.WorldId
-                || client.Queue.DbSession.DataCenter == packet.DatacenterId)
-            {
-                // resume existing session
-                _logger.LogInformation("[{}] resuming login queue with DbSessionId = {} (no parameters have changed)",
-                    client.Id, client.Queue.DbSession.Id);
-                client.Queue.LastUpdateReceived = DateTime.UtcNow;
-                return;
-            }
-
-            _logger.LogInformation("[{}] abandoning previous queue as parameters have changed", client.Id);
-
-            var endData = new QueueSessionData
-            {
-                Session = client.Queue.DbSession,
-                Type = QueueSessionData.DataType.End,
-                // assume user cancellation
-                EndReason = QueueSessionData.QueueEndReason.UserCancellation,
-                Time = DateTime.UtcNow
-            };
-
-            _db.QueueSessions.Attach(endData.Session);
-            _db.QueueSessionData.Add(endData);
-            _db.SaveChanges();
-
-            client.Queue = null;
-        }
-
-        var session = new QueueSession
-        {
-            ClientId = Guid.Parse(client.Id),
-            ClientSessionId = packet.SessionId,
-            DataCenter = packet.DatacenterId,
-            World = packet.WorldId,
-            SessionType = QueueSession.Type.Login,
-            PluginVersion = client.PluginVersion
-        };
-
-        var sessionData = new QueueSessionData
-        {
-            Session = session,
-            Type = QueueSessionData.DataType.Start,
-            Time = DateTime.UtcNow
-        };
-
-        _db.QueueSessionData.Add(sessionData);
-        _db.SaveChanges();
-
-        client.Queue = new ClientQueue
-        {
-            QueuePosition = 0,
-            DbSession = session
-        };
-
-        _logger.LogInformation("[{}] entered login queue (DbSessionId = {})", client.Id, client.Queue.DbSession.Id);
+        _queueManager.ResumeOrEnterLoginQueue(client, packet);
     }
 
     public void QueueExit(QueueExit packet)
     {
-        var client = _manager.GetClientForConnection(Context.ConnectionId);
-        if (client.Queue == null)
-        {
-            throw new HubException("Client is not actively in a queue");
-        }
-
+        var client = _clientManager.GetClientForConnection(Context.ConnectionId);
         _logger.LogDebug("[{}] QueueExit: {}", client.Id, packet);
 
-        var sessionData = new QueueSessionData
-        {
-            Session = client.Queue.DbSession,
-            Type = QueueSessionData.DataType.End,
-            EndReason = (QueueSessionData.QueueEndReason) packet.Reason,
-            Time = DateTime.UtcNow
-        };
-
-        _db.QueueSessions.Attach(sessionData.Session);
-        _db.QueueSessionData.Add(sessionData);
-        _db.SaveChanges();
-
-        _logger.LogInformation("[{}] left queue (DbSessionId = {})", client.Id, client.Queue.DbSession.Id);
-
-        client.Queue = null;
+        _queueManager.ExitQueue(client, (QueueSessionData.QueueEndReason) packet.Reason);
     }
 
     public async Task QueueStatusUpdate(QueueStatusUpdate packet)
     {
-        var client = _manager.GetClientForConnection(Context.ConnectionId);
-        if (client.Queue == null)
-        {
-            throw new HubException("Client is not actively in a queue");
-        }
-
+        var client = _clientManager.GetClientForConnection(Context.ConnectionId);
         _logger.LogDebug("[{}] QueueStatusUpdate: {}", client.Id, packet);
 
-        var sessionData = new QueueSessionData
-        {
-            Session = client.Queue.DbSession,
-            Type = QueueSessionData.DataType.Update,
-            QueuePosition = packet.QueuePosition,
-            Time = DateTime.UtcNow
-        };
+        _queueManager.RecordPositionUpdate(client, packet.QueuePosition);
 
-        _db.QueueSessions.Attach(sessionData.Session);
-        _db.QueueSessionData.Add(sessionData);
-        await _db.SaveChangesAsync();
-
-        client.Queue.QueuePosition = packet.QueuePosition;
-
+        // Send updated information to the client
         await Send(new QueueStatusEstimate
         {
             EstimatedTime = TimeSpan.Zero,
@@ -196,7 +124,7 @@ public class WaitingwayHub : Hub
                 new GuiText
                 {
                     Text =
-                        "Estimated wait times are not yet available.\nWe're working on adding this feature, stay tuned!"
+                        "Estimated wait times are not yet available.\nThis feature is in progress - stay tuned!"
                 }
             }
         });

@@ -9,7 +9,7 @@ public class ClientQueue
     public uint QueuePosition
     {
         get => _queuePosition;
-        set
+        internal set
         {
             _queuePosition = value;
             LastUpdateReceived = DateTime.UtcNow;

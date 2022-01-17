@@ -1,10 +1,13 @@
-﻿using Waitingway.Backend.Database;
+﻿using StackExchange.Redis;
+using Waitingway.Backend.Database;
+using Waitingway.Backend.Database.Models;
+using Waitingway.Backend.Server.Queue;
 
 namespace Waitingway.Backend.Server.Client;
 
 public class ClientManager
 {
-    private static readonly Object Lock = new();
+    private static readonly object Lock = new();
 
     // client id -> connection id
     private static readonly Dictionary<string, string> ClientToConnection = new();
@@ -17,6 +20,8 @@ public class ClientManager
 
     private readonly ILogger<ClientManager> _logger;
     private readonly WaitingwayContext _db;
+    private readonly ConnectionMultiplexer _redis;
+    private readonly QueueManager _queueManager;
 
     public int ActiveCount
     {
@@ -28,18 +33,44 @@ public class ClientManager
         get => Clients.Count;
     }
 
-    public ClientManager(ILogger<ClientManager> logger, WaitingwayContext db)
+    public ClientManager(ILogger<ClientManager> logger, WaitingwayContext db, ConnectionMultiplexer redis,
+        QueueManager queueManager)
     {
         _logger = logger;
         _db = db;
+        _redis = redis;
+        _queueManager = queueManager;
     }
 
     public async Task Restore()
     {
-        _logger.LogInformation("queued session restore");
+        _logger.LogInformation("Restoring queue sessions from database...");
+        var count = 0;
         await foreach (var ra in _db.RecentlyActiveQueueSessions.AsAsyncEnumerable())
         {
-            var client = Client.From(ra);
+            var client = new Client
+            {
+                Id = ra.ClientId.ToString(),
+                PluginVersion = ra.PluginVersion,
+            };
+            
+            var queue = new ClientQueue
+            {
+                DbSession = new QueueSession
+                {
+                    Id = ra.Id,
+                    ClientId = ra.ClientId,
+                    ClientSessionId = ra.ClientSessionId,
+                    DataCenter = ra.DataCenter,
+                    SessionType = ra.SessionType,
+                    World = ra.World,
+                    DutyContentId = ra.DutyContentId,
+                    PluginVersion = ra.PluginVersion
+                },
+                QueuePosition = ra.QueuePosition ?? 0,
+                LastUpdateReceived = ra.Time
+            };
+
             _logger.LogInformation("restoring queue session for client: {}", client.Id);
             lock (Lock)
             {
@@ -47,7 +78,7 @@ public class ClientManager
                 {
                     _logger.LogWarning("duplicate queue session for client {}, using the newer one", client.Id);
                     var old = DisconnectedClients[client.Id];
-                    if (old.Client.Queue?.LastUpdateReceived < client.Queue?.LastUpdateReceived)
+                    if (_queueManager.TryGetQueue(old.Client)?.LastUpdateReceived < queue.LastUpdateReceived)
                     {
                         DisconnectedClients.Remove(client.Id);
                     }
@@ -58,8 +89,12 @@ public class ClientManager
                 }
 
                 DisconnectedClients.Add(client.Id, new DisconnectedClient {Client = client});
+                _queueManager.DoEnterQueue(client, queue, true);
+                count++;
             }
         }
+
+        _logger.LogInformation("{} queue sessions restored", count);
     }
 
     internal void ReapDisconnectedClients()
@@ -70,8 +105,7 @@ public class ClientManager
                          DateTime.UtcNow.Subtract(dc.DisconnectedAt).TotalMinutes >= 15))
             {
                 _logger.LogInformation("[{}] reaping disconnected client", dc.Client.Id);
-                DisconnectedClients.Remove(dc.Client.Id);
-                Clients.Remove(dc.Client.Id);
+                RemoveClient(dc.Client.Id);
             }
         }
     }
@@ -108,10 +142,10 @@ public class ClientManager
 
     public void Disconnect(string connectionId, Client client)
     {
-        if (!client.InQueue)
+        if (!_queueManager.IsInQueue(client))
         {
             // client was not in queue, remove them immediately
-            Remove(connectionId);
+            RemoveConnection(connectionId);
         }
         else
         {
@@ -120,12 +154,12 @@ public class ClientManager
             {
                 _logger.LogInformation("[{}] client disconnected while in queue, waiting to remove", client.Id);
                 DisconnectedClients.Add(client.Id, new DisconnectedClient {Client = client});
-                Remove(connectionId);
+                RemoveConnection(connectionId);
             }
         }
     }
 
-    public void Remove(string connectionId)
+    public void RemoveConnection(string connectionId)
     {
         lock (Lock)
         {
@@ -135,9 +169,26 @@ public class ClientManager
                 return;
             }
 
+            ConnectionToClient.Remove(connectionId);
+            RemoveClient(clientId);
+        }
+    }
+
+    public void RemoveClient(string clientId)
+    {
+        lock (Lock)
+        {
+            string? connectionId;
+            if (ClientToConnection.TryGetValue(clientId, out connectionId))
+            {
+                ConnectionToClient.Remove(connectionId);
+            }
+            
+            _queueManager.RemoveClient(clientId);
+            
             Clients.Remove(clientId);
             ClientToConnection.Remove(clientId);
-            ConnectionToClient.Remove(connectionId);
+            DisconnectedClients.Remove(clientId);
         }
     }
 
