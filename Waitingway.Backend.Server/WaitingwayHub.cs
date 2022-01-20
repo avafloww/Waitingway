@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using Waitingway.Backend.Database;
 using Waitingway.Backend.Database.Models;
 using Waitingway.Backend.Server.Client;
 using Waitingway.Backend.Server.Queue;
@@ -13,12 +14,15 @@ public class WaitingwayHub : Hub
     private readonly ILogger<WaitingwayHub> _logger;
     private readonly ClientManager _clientManager;
     private readonly QueueManager _queueManager;
+    private readonly WaitingwayContext _db;
 
-    public WaitingwayHub(ILogger<WaitingwayHub> logger, ClientManager clientManager, QueueManager queueManager)
+    public WaitingwayHub(ILogger<WaitingwayHub> logger, ClientManager clientManager, QueueManager queueManager,
+        WaitingwayContext db)
     {
         _logger = logger;
         _clientManager = clientManager;
         _queueManager = queueManager;
+        _db = db;
     }
 
     public override Task OnConnectedAsync()
@@ -59,10 +63,39 @@ public class WaitingwayHub : Hub
             return;
         }
 
+        if (!Guid.TryParse(packet.ClientId, out _))
+        {
+            _logger.LogInformation("disconnecting connection {}: invalid client id received {}",
+                Context.ConnectionId, packet.ClientId);
+            await Send(new ServerGoodbye
+            {
+                Message = "Your configuration is corrupt. Please delete your Waitingway configuration file."
+            });
+
+            Context.Abort();
+            return;
+        }
+
         _logger.LogInformation("connection {} identified as client {}", Context.ConnectionId, packet.ClientId);
-        _clientManager.Add(Context.ConnectionId,
-            new Client.Client {Id = packet.ClientId, PluginVersion = packet.PluginVersion});
+        var client = new Client.Client {Id = packet.ClientId, PluginVersion = packet.PluginVersion};
+        _clientManager.Add(Context.ConnectionId, client);
+
         await Send(new ServerHello());
+        RefreshDiscordLinkStatus(client);
+    }
+
+    private void RefreshDiscordLinkStatus(Client.Client client)
+    {
+        try
+        {
+            var discordLink = _db.DiscordLinkInfo.Find(Guid.Parse(client.Id));
+            client.DiscordLinked = discordLink != null;
+            _logger.LogDebug("[{}] RefreshDiscordLinkStatus: linked = {}", client.Id, client.DiscordLinked);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[{}] RefreshDiscordLinkStatus: error", client.Id);
+        }
     }
 
     public void ClientGoodbye(ClientGoodbye packet)
@@ -75,12 +108,15 @@ public class WaitingwayHub : Hub
         // todo: implement this
     }
 
-    public void LoginQueueEnter(LoginQueueEnter packet)
+    public async void LoginQueueEnter(LoginQueueEnter packet)
     {
         var client = _clientManager.GetClientForConnection(Context.ConnectionId);
         _logger.LogDebug("[{}] LoginQueueEnter: {}", client.Id, packet);
 
         _queueManager.ResumeOrEnterLoginQueue(client, packet);
+
+        RefreshDiscordLinkStatus(client);
+        await UpdateClient(client);
     }
 
     public void QueueExit(QueueExit packet)
@@ -98,28 +134,57 @@ public class WaitingwayHub : Hub
 
         _queueManager.RecordPositionUpdate(client, packet.QueuePosition);
 
+        await UpdateClient(client);
+    }
+
+    private async Task UpdateClient(Client.Client client)
+    {
+        if (!_queueManager.IsInQueue(client))
+        {
+            return;
+        }
+
+        var messages = new List<GuiText>
+        {
+            new()
+            {
+                Color = GuiText.GuiTextColor.Yellow,
+                Text = $"Your last logged queue position: {_queueManager.GetQueue(client).QueuePosition}"
+            },
+            new()
+            {
+                Color = GuiText.GuiTextColor.Yellow,
+                Text = "Estimated wait time: unknown"
+            },
+            new()
+            {
+                Text = "Estimated wait times are not yet available.\nThis feature is in progress - stay tuned!"
+            }
+        };
+
+        if (!client.DiscordLinked)
+        {
+            messages.Add(new()
+            {
+                Color = GuiText.GuiTextColor.Green,
+                Text = "Do you want queue notifications via Discord?\nClick the Settings icon to get started!"
+            });
+        }
+
+        if (!client.IsLatestVersion)
+        {
+            messages.Add(new()
+            {
+                Color = GuiText.GuiTextColor.Yellow,
+                Text = "There is a new Waitingway version available.\nPlease update as soon as possible."
+            });
+        }
+
         // Send updated information to the client
         await Send(new QueueStatusEstimate
         {
             EstimatedTime = TimeSpan.Zero,
-            LocalisedMessages = new[]
-            {
-                new GuiText
-                {
-                    Color = GuiText.GuiTextColor.Yellow,
-                    Text = $"Your last logged queue position: {packet.QueuePosition}"
-                },
-                new GuiText
-                {
-                    Color = GuiText.GuiTextColor.Yellow,
-                    Text = "Estimated wait time: unknown"
-                },
-                new GuiText
-                {
-                    Text =
-                        "Estimated wait times are not yet available.\nThis feature is in progress - stay tuned!"
-                }
-            }
+            LocalisedMessages = messages.ToArray()
         });
     }
 

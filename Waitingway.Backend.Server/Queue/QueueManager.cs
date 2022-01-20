@@ -173,6 +173,9 @@ public class QueueManager
             RemoveClient(client.Id);
         }
 
+        // attach the end reason to the queue object so Discord can use it
+        queue.EndReason = reason;
+
         var sessionData = new QueueSessionData
         {
             Session = queue.DbSession,

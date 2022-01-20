@@ -1,6 +1,6 @@
 name: Waitingway
 author: Avaflow
-punchline: Crowdsourced FFXIV login queue times.
+punchline: Crowdsourced FFXIV login queue times, now with Discord queue notification features.
 description: |-
   Contributes and utilizes crowdsourced login queue information to provide an estimate of your wait time.
 repo_url: https://waitingway.com

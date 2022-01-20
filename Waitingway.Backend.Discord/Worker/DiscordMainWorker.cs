@@ -1,5 +1,4 @@
 using Discord;
-using Discord.Rest;
 using Discord.WebSocket;
 
 namespace Waitingway.Backend.Discord.Worker;
@@ -17,11 +16,6 @@ public class DiscordMainWorker : BackgroundService
         _config = config;
 
         _client.Log += LogMessage;
-    }
-
-    internal async Task JoinUserToGuild(ulong userId, string accessToken)
-    {
-        await _client.Rest.AddGuildUserAsync(_config.GuildId, userId, accessToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

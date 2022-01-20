@@ -20,6 +20,7 @@ public class ClientQueue
     public Guid ClientId { get; init; }
     public QueueSession DbSession { get; init; }
     public DateTime LastUpdateReceived { get; set; } = DateTime.UtcNow;
+    public QueueSessionData.QueueEndReason? EndReason { get; set; }
     
     public string ToJson()
     {

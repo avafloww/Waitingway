@@ -13,12 +13,15 @@ public class DiscordController : Controller
 {
     private readonly ILogger<DiscordController> _logger;
     private readonly DiscordConfig _config;
+    private readonly DiscordService _discord;
     private readonly WaitingwayContext _db;
 
-    public DiscordController(ILogger<DiscordController> logger, DiscordConfig config, WaitingwayContext db)
+    public DiscordController(ILogger<DiscordController> logger, DiscordConfig config, DiscordService discord,
+        WaitingwayContext db)
     {
         _logger = logger;
         _config = config;
+        _discord = discord;
         _db = db;
     }
 
@@ -51,6 +54,8 @@ public class DiscordController : Controller
             _db.DiscordLinkInfo.Add(linkInfo);
             _db.SaveChanges();
             _logger.LogInformation("Linked client {} to Discord user {}", clientId, discordId);
+
+            Task.Run(() => _discord.SendLinkedMessage(linkInfo));
         }
         catch (DbUpdateException ex)
         {
