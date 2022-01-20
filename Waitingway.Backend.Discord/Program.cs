@@ -1,9 +1,8 @@
 using System.Security.Claims;
-using Discord;
-using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 using Waitingway.Backend.Database;
@@ -11,6 +10,11 @@ using Waitingway.Backend.Discord.Worker;
 using DiscordConfig = Waitingway.Backend.Discord.DiscordConfig;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+});
 
 // web shit
 builder.Services.AddControllersWithViews();
@@ -64,6 +68,7 @@ builder.Services.AddAuthorization();
 
 // let's go
 var app = builder.Build();
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.MapControllers();
 app.UseAuthentication();
