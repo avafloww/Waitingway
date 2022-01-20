@@ -55,7 +55,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Waitingway.Protocol\Waitingway.Protocol.csproj" />
+        <ProjectReference Include="..\Waitingway.Protocol\Waitingway.Protocol.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Assets\Settings.png">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
 </Project>

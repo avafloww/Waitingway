@@ -68,6 +68,7 @@ public class Plugin : IDalamudPlugin
         IpcSystem = new IpcSystem(this);
 
         Ui = new PluginUi(this);
+        PluginInterface.UiBuilder.OpenConfigUi += Ui.ConfigWindow.ToggleVisible;
 
         // queue handlers
         LoginQueueHandler = new LoginQueueHandler(this);
@@ -119,6 +120,12 @@ public class Plugin : IDalamudPlugin
                 Ui.LoginQueueWindow.SetDrawPos((AtkUnitBase*) addon);
             }
         }
+
+        var charaSelectList = GameGui.GetAddonByName("_CharaSelectListMenu", 1);
+        if (charaSelectList != IntPtr.Zero)
+        {
+            Ui.ConfigButtonOpenerWindow.SetDrawParams((AtkUnitBase*) charaSelectList);
+        }
     }
 
     private void HandleLogout(object? sender, EventArgs eventArgs)
@@ -142,6 +149,8 @@ public class Plugin : IDalamudPlugin
 
         Client.Dispose();
 
+        Framework.Update -= OnFrameworkUpdate;
+        PluginInterface.UiBuilder.OpenConfigUi -= Ui.ConfigWindow.ToggleVisible;
         Ui.Dispose();
 
         Hooks.Dispose();
@@ -149,8 +158,6 @@ public class Plugin : IDalamudPlugin
         PluginInterface.SavePluginConfig(Config);
 
         ClientState.Logout -= HandleLogout;
-
-        Framework.Update -= OnFrameworkUpdate;
     }
 
     public void Dispose()

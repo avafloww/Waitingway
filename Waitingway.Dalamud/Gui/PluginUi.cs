@@ -8,6 +8,8 @@ internal class PluginUi : IDisposable
 {
     internal readonly Plugin Plugin;
     internal readonly LoginQueueWindow LoginQueueWindow;
+    internal readonly ConfigButtonOpenerWindow ConfigButtonOpenerWindow;
+    internal readonly ConfigWindow ConfigWindow;
     internal GuiText[]? QueueText;
 
     public PluginUi(Plugin plugin)
@@ -15,6 +17,8 @@ internal class PluginUi : IDisposable
         Plugin = plugin;
 
         LoginQueueWindow = new LoginQueueWindow(this);
+        ConfigButtonOpenerWindow = new ConfigButtonOpenerWindow(this);
+        ConfigWindow = new ConfigWindow(this);
 
         SetStatusText("Waiting for server...");
         Plugin.PluginInterface.UiBuilder.Draw += Draw;
@@ -23,11 +27,14 @@ internal class PluginUi : IDisposable
     private void Draw()
     {
         LoginQueueWindow.Draw();
+        ConfigButtonOpenerWindow.Draw();
+        ConfigWindow.Draw();
     }
 
     public void Dispose()
     {
         Plugin.PluginInterface.UiBuilder.Draw -= Draw;
+        ConfigButtonOpenerWindow.Dispose();
     }
 
     internal void SetStatusText(string status)
