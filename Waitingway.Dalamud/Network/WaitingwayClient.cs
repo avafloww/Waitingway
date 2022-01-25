@@ -156,7 +156,7 @@ public class WaitingwayClient : IDisposable
         });
     }
 
-    internal void LanguageChanged(string newLanguage)
+    private void LanguageChanged(string newLanguage)
     {
         CheckDisposed();
         _language = newLanguage;
@@ -173,20 +173,30 @@ public class WaitingwayClient : IDisposable
 
     internal void ExitQueue(QueueExit.QueueExitReason reason)
     {
+        Task.Run(() => DoExitQueue(reason));
+    }
+
+    private async Task DoExitQueue(QueueExit.QueueExitReason reason)
+    {
         CheckDisposed();
         Debug.Assert(QueueEntryTime != null);
         QueueEntryTime = null;
         QueueType = QueueType.None;
-        Send(new QueueExit {Reason = reason});
+        await SendAsync(new QueueExit {Reason = reason});
     }
 
     internal void EnterLoginQueue()
+    {
+        Task.Run(DoEnterLoginQueue);
+    }
+
+    private async Task DoEnterLoginQueue()
     {
         CheckDisposed();
         Debug.Assert(QueueEntryTime == null);
         QueueType = QueueType.Login;
         QueueEntryTime = DateTime.Now;
-        Send(new LoginQueueEnter(
+        await SendAsync(new LoginQueueEnter(
             _plugin.Config.ClientId,
             CharacterId,
             _plugin.Config.ClientSalt,
@@ -216,10 +226,15 @@ public class WaitingwayClient : IDisposable
 
     internal void UpdateQueuePosition(int position)
     {
+        Task.Run(() => DoUpdateQueuePosition(position));
+    }
+
+    private async Task DoUpdateQueuePosition(int position)
+    {
         QueuePosition = position;
         if (position >= 0)
         {
-            Send(new QueueStatusUpdate {QueuePosition = (uint) position});
+            await SendAsync(new QueueStatusUpdate {QueuePosition = (uint) position});
         }
     }
 

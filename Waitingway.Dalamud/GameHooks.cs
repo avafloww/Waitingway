@@ -8,6 +8,7 @@ using Siggingway;
 using Waitingway.Dalamud.Network;
 using Waitingway.Dalamud.Structs;
 using Waitingway.Protocol.Serverbound;
+using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
 
 namespace Waitingway.Dalamud;
 
@@ -95,6 +96,19 @@ public unsafe class GameHooks : IDisposable
         // as of 6.05: action is 0x03 immediately after confirming login, and 0x22 immediately after confirming login queue cancellation
         // value = 0: SelectYesNo "Yes" selected
 
+        // don't crash the game if something funky is going on
+        if (value == null)
+        {
+            PluginLog.LogWarning("AgentLobbyVf0Detour: AtkValue ptr is null?");
+            return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
+        }
+
+        if (value->Type != ValueType.Int && value->Type != ValueType.UInt)
+        {
+            PluginLog.LogWarning($"AgentLobbyVf0Detour: AtkValue type was unexpected ({value->Type})?");
+            return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
+        }
+
         try
         {
             if (value->Int == 0x00)
@@ -112,7 +126,7 @@ public unsafe class GameHooks : IDisposable
         }
         catch (Exception ex)
         {
-            PluginLog.Log($"Exception in AgentLobbyVf0Detour: {ex}");
+            PluginLog.LogError($"Exception in AgentLobbyVf0Detour: {ex}");
         }
 
         return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
