@@ -3,6 +3,7 @@ using Dalamud.Game;
 using Dalamud.Hooking;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using Siggingway;
 using Waitingway.Dalamud.Network;
 using Waitingway.Dalamud.Structs;
@@ -22,7 +23,7 @@ public unsafe class GameHooks : IDisposable
 
     private delegate IntPtr OnLobbyErrorCode(IntPtr a1, IntPtr a2);
 
-    private delegate IntPtr AgentLobbyVf0(AgentLobby* agent, IntPtr a2, IntPtr a3, IntPtr a4, int action);
+    private delegate IntPtr AgentLobbyVf0(AgentLobby* agent, IntPtr a2, AtkValue* value, IntPtr a4, int action);
 
     public bool IsDisposed { get; private set; }
 
@@ -89,19 +90,31 @@ public unsafe class GameHooks : IDisposable
         return LobbyStatusHook.Original(a1, a2);
     }
 
-    internal IntPtr AgentLobbyVf0Detour(AgentLobby* agent, IntPtr a2, IntPtr a3, IntPtr a4, int action)
+    internal IntPtr AgentLobbyVf0Detour(AgentLobby* agent, IntPtr a2, AtkValue* value, IntPtr a4, int action)
     {
         // as of 6.05: action is 0x03 immediately after confirming login, and 0x22 immediately after confirming login queue cancellation
-        if (action == 0x03) // confirm login
+        // value = 0: SelectYesNo "Yes" selected
+
+        try
         {
-            Client.EnterLoginQueue();
+            if (value->Int == 0x00)
+            {
+                if (action == 0x03) // confirm login
+                {
+                    Client.EnterLoginQueue();
+                }
+                else if (action == 0x22) // cancel login queue
+                {
+                    PluginLog.Log("Sending QueueExit due to user cancellation of login queue");
+                    Client.ExitQueue(QueueExit.QueueExitReason.UserCancellation);
+                }
+            }
         }
-        else if (action == 0x22) // cancel login queue
+        catch (Exception ex)
         {
-            PluginLog.Log("Sending QueueExit due to user cancellation of login queue");
-            Client.ExitQueue(QueueExit.QueueExitReason.UserCancellation);
+            PluginLog.Log($"Exception in AgentLobbyVf0Detour: {ex}");
         }
 
-        return AgentLobbyVf0Hook.Original(agent, a2, a3, a4, action);
+        return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
     }
 }
