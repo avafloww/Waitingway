@@ -12,6 +12,9 @@ namespace Waitingway.Dalamud.Gui;
 
 internal class LoginQueueWindow
 {
+#if DEBUG
+    public bool ForceShow = false;
+#endif
     private readonly PluginUi _ui;
     private float _posX;
     private float _posY;
@@ -25,9 +28,14 @@ internal class LoginQueueWindow
 
     public void Draw()
     {
-        if (!_ui.Plugin.InLoginQueue()
-            || _ui.Plugin.GameGui.GetAddonByName("CharaSelect", 1) == IntPtr.Zero
-            || !_foundPositions)
+        if (
+#if DEBUG
+            !ForceShow &&
+#endif
+            (!_ui.Plugin.InLoginQueue()
+             || _ui.Plugin.GameGui.GetAddonByName("CharaSelect", 1) == IntPtr.Zero
+             || !_foundPositions)
+        )
         {
             return;
         }
@@ -52,7 +60,7 @@ internal class LoginQueueWindow
             _ui.DrawQueueText();
 
             ImGui.Separator();
-            ImGui.Text($"Waitingway version {_ui.Plugin.Version} (alpha)");
+            ImGui.Text($"Waitingway version {_ui.Plugin.Version}");
             ImGui.SameLine();
 
             if (ImGuiComponents.IconButton(FontAwesomeIcon.Globe))

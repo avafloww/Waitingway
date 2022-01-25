@@ -18,10 +18,12 @@ public class WaitingwayClient : IDisposable
     private readonly CancellationTokenSource _cancellationTokenSource;
     private string _language;
 
+    public string RemoteUrl { get; init; }
+
     public bool IsDisposed { get; private set; }
 
     public bool Connected => _connection.State == HubConnectionState.Connected;
-    private bool _gotGoodbye;
+    private ServerGoodbye? _goodbye;
 
     public ulong CharacterId { get; private set; }
     public ushort DataCenterId { get; private set; }
@@ -39,6 +41,7 @@ public class WaitingwayClient : IDisposable
         _clientId = clientId;
 
         PluginLog.Log($"Remote server: {serverUrl}");
+        RemoteUrl = serverUrl;
         _connection = new HubConnectionBuilder()
             .WithUrl(serverUrl)
             .WithAutomaticReconnect(new InfiniteRetryPolicy())
@@ -103,7 +106,7 @@ public class WaitingwayClient : IDisposable
 #if DEBUG
         PluginLog.LogDebug("Received ServerGoodbye packet");
 #endif
-        _gotGoodbye = true;
+        _goodbye = packet;
         if (packet.Message != null)
         {
             _plugin.Ui.SetStatusText(packet.Message);
@@ -132,14 +135,18 @@ public class WaitingwayClient : IDisposable
         CheckDisposed();
         PluginLog.Log($"Disconnected from server. {ex}");
 
-        if (!_gotGoodbye)
+        if (_goodbye == null)
         {
             _plugin.Ui.SetStatusText(
                 "Disconnected from server unexpectedly.\nCheck Dalamud logs for more information.");
         }
+        else
+        {
+            Dispose();
+        }
 
         // reset this now that we've actually disconnected
-        _gotGoodbye = false;
+        _goodbye = null;
 
         return Task.CompletedTask;
     }
@@ -242,13 +249,18 @@ public class WaitingwayClient : IDisposable
     {
         if (IsDisposed)
         {
-            throw new ObjectDisposedException("WaitingwayClient");
+            throw new ObjectDisposedException(
+                "WaitingwayClient has been disposed (did the server forcibly disconnect your client?)");
         }
     }
 
     public void Dispose()
     {
-        CheckDisposed();
+        if (IsDisposed)
+        {
+            return;
+        }
+
         IsDisposed = true;
 
         ResetQueue();
@@ -282,6 +294,10 @@ public class WaitingwayClient : IDisposable
             PluginLog.LogDebug($"Sending {packet.GetType().Name} packet");
 #endif
             await _connection.InvokeAsync(packet.GetType().Name, packet);
+        }
+        catch (TaskCanceledException ex)
+        {
+            PluginLog.Warning($"SendAsync for {packet.GetType().Name} was cancelled, backing away");
         }
         catch (Exception ex)
         {

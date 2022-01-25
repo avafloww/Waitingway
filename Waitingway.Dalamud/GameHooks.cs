@@ -31,6 +31,10 @@ public unsafe class GameHooks : IDisposable
     private WaitingwayClient Client => Plugin.Client;
     private Plugin Plugin { get; }
 
+#if DEBUG
+    public bool ThrowInHooks = false;
+#endif
+
     public GameHooks(Plugin plugin, SigScanner sigScanner)
     {
         Plugin = plugin;
@@ -66,6 +70,13 @@ public unsafe class GameHooks : IDisposable
     {
         try
         {
+#if DEBUG
+            if (ThrowInHooks)
+            {
+                throw new Exception("ThrowInHooks test: LobbyStatusUpdateDetour");
+            }
+#endif
+
             var lobbyStatus = (LobbyStatusUpdate*) a2.ToPointer();
             if (lobbyStatus->statusCode == LobbyStatusCode.WorldFull)
             {
@@ -96,21 +107,28 @@ public unsafe class GameHooks : IDisposable
         // as of 6.05: action is 0x03 immediately after confirming login, and 0x22 immediately after confirming login queue cancellation
         // value = 0: SelectYesNo "Yes" selected
 
-        // don't crash the game if something funky is going on
-        if (value == null)
-        {
-            PluginLog.LogWarning("AgentLobbyVf0Detour: AtkValue ptr is null?");
-            return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
-        }
-
-        if (value->Type != ValueType.Int && value->Type != ValueType.UInt)
-        {
-            PluginLog.LogWarning($"AgentLobbyVf0Detour: AtkValue type was unexpected ({value->Type})?");
-            return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
-        }
-
         try
         {
+#if DEBUG
+            if (ThrowInHooks)
+            {
+                throw new Exception("ThrowInHooks test: AgentLobbyVf0Detour");
+            }
+#endif
+
+            // don't crash the game if something funky is going on
+            if (value == null)
+            {
+                PluginLog.LogWarning("AgentLobbyVf0Detour: AtkValue ptr is null?");
+                return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
+            }
+
+            if (value->Type != ValueType.Int && value->Type != ValueType.UInt)
+            {
+                PluginLog.LogWarning($"AgentLobbyVf0Detour: AtkValue type was unexpected ({value->Type})?");
+                return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
+            }
+
             if (value->Int == 0x00)
             {
                 if (action == 0x03) // confirm login
