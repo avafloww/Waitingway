@@ -30,6 +30,11 @@ public class QueueManager
         {
             ClientQueues.Remove(clientId);
         }
+        
+        // remove from redis sets
+        var rc = _redis.GetDatabase();
+        rc.KeyDelete($"client:{clientId}:queue");
+        rc.SetRemove("clients:queued", clientId);
     }
 
     public ClientQueue? TryGetQueue(Client.Client client)
@@ -156,6 +161,7 @@ public class QueueManager
         var rc = _redis.GetDatabase();
         var json = queue.ToJson();
         rc.StringSet($"client:{client.Id}:queue", json);
+        rc.SetAdd("clients:queued", client.Id);
         rc.Publish("queue:enter", json);
 
         _logger.LogInformation("[{}] entered login queue (DbSessionId = {})", client.Id, queue.DbSession.Id);
@@ -190,6 +196,7 @@ public class QueueManager
 
         var rc = _redis.GetDatabase();
         rc.KeyDelete($"client:{client.Id}:queue");
+        rc.SetRemove("clients:queued", client.Id);
         rc.Publish("queue:exit", queue.ToJson());
 
         _logger.LogInformation("[{}] left queue (DbSessionId = {})", client.Id, queue.DbSession.Id);

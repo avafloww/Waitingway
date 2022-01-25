@@ -43,7 +43,8 @@ public class ClientManager
         _queueManager = queueManager;
     }
 
-    public async Task Restore()
+    [Obsolete("to be replaced by RestoreFromRedis()")]
+    public async Task RestoreFromDb()
     {
         _logger.LogInformation("Restoring queue sessions from database...");
         var count = 0;
@@ -96,9 +97,63 @@ public class ClientManager
             }
         }
 
-        _logger.LogInformation("{} queue sessions restored", count);
+        _logger.LogInformation("{} queue sessions restored from database", count);
     }
 
+    public void RestoreFromRedis()
+    {
+        _logger.LogInformation("Restoring queue sessions from Redis...");
+        var rc = _redis.GetDatabase();
+        var count = 0;
+        foreach (var clientId in rc.SetMembers("clients:queued"))
+        {
+            try
+            {
+                var jsonData = rc.StringGet($"client:${clientId}:queue");
+                if (jsonData == RedisValue.Null || jsonData == RedisValue.EmptyString)
+                {
+                    _logger.LogWarning("Queue data key for client {} was missing or empty, skipping", clientId);
+                    continue;
+                }
+
+                var queue = ClientQueue.FromJson(jsonData);
+                var client = new Client
+                {
+                    Id = queue!.DbSession.ClientId.ToString(),
+                    PluginVersion = queue!.DbSession.PluginVersion
+                };
+
+                _logger.LogInformation("restoring queue session for client: {}", client.Id);
+                lock (Lock)
+                {
+                    if (DisconnectedClients.ContainsKey(client.Id))
+                    {
+                        _logger.LogWarning("duplicate queue session for client {}, using the newer one", client.Id);
+                        var old = DisconnectedClients[client.Id];
+                        if (_queueManager.TryGetQueue(old.Client)?.LastUpdateReceived < queue.LastUpdateReceived)
+                        {
+                            DisconnectedClients.Remove(client.Id);
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
+
+                    DisconnectedClients.Add(client.Id, new DisconnectedClient {Client = client});
+                    _queueManager.DoEnterQueue(client, queue, true);
+                    count++;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error while restoring queue session for client {}", clientId);
+            }
+        }
+
+        _logger.LogInformation("{} queue sessions restored from Redis", count);
+    }
+    
     internal void ReapDisconnectedClients()
     {
         lock (Lock)

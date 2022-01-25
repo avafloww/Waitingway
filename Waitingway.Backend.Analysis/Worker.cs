@@ -14,12 +14,11 @@ public class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         await using var scope = _provider.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<AnalysisService>().Analyse();
-        
-        // while (!stoppingToken.IsCancellationRequested)
-        // {
-            // _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-            // await Task.Delay(1000, stoppingToken);
-        // }
+
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            await scope.ServiceProvider.GetRequiredService<AnalysisService>().AnalyseAll();
+            await Task.Delay(15000, stoppingToken);
+        }
     }
 }

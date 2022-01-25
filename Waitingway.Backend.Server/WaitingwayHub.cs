@@ -137,12 +137,14 @@ public class WaitingwayHub : Hub
         await UpdateClient(client);
     }
 
-    private async Task UpdateClient(Client.Client client)
+    public async Task UpdateClient(Client.Client client)
     {
         if (!_queueManager.IsInQueue(client))
         {
             return;
         }
+
+        var queue = _queueManager.GetQueue(client);
 
         var messages = new List<GuiText>
         {
@@ -150,17 +152,33 @@ public class WaitingwayHub : Hub
             {
                 Color = GuiText.GuiTextColor.Yellow,
                 Text = $"Your last logged queue position: {_queueManager.GetQueue(client).QueuePosition}"
-            },
-            new()
-            {
-                Color = GuiText.GuiTextColor.Yellow,
-                Text = "Estimated wait time: unknown"
-            },
-            new()
-            {
-                Text = "Estimated wait times are not yet available.\nThis feature is in progress - stay tuned!"
             }
         };
+
+        if (queue.TimeEstimate == null)
+        {
+            messages.Add(new()
+            {
+                Color = GuiText.GuiTextColor.Yellow,
+                Text = "Estimated wait time: calculating..."
+            });
+        }
+        else
+        {
+            var roundedEstimate = queue.TimeEstimate?.Seconds >= 30
+                ? new TimeSpan(queue.TimeEstimate?.Hours ?? 0, queue.TimeEstimate?.Minutes + 1 ?? 0, 0)
+                : new TimeSpan(queue.TimeEstimate?.Hours ?? 0, queue.TimeEstimate?.Minutes ?? 0, 0);
+
+            var formatted = roundedEstimate.TotalSeconds < 1
+                ? "unknown"
+                : $"about {roundedEstimate.TotalMinutes} minute{(roundedEstimate.TotalMinutes > 1 ? "s" : "")}";
+
+            messages.Add(new()
+            {
+                Color = GuiText.GuiTextColor.Yellow,
+                Text = $"Estimated wait time: {formatted}"
+            });
+        }
 
         if (!client.DiscordLinked)
         {

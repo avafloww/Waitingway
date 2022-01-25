@@ -21,6 +21,7 @@ public class ClientQueue
     public QueueSession DbSession { get; init; }
     public DateTime LastUpdateReceived { get; set; } = DateTime.UtcNow;
     public QueueSessionData.QueueEndReason? EndReason { get; set; }
+    public TimeSpan? TimeEstimate { get; set; }
     
     public string ToJson()
     {
