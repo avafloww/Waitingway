@@ -56,20 +56,20 @@ public class WaitingwayHub : Hub
                 Context.ConnectionId, packet.ProtocolVersion);
             await Send(new ServerGoodbye
             {
-                Message = "Your version of Waitingway is outdated. Please update to the latest version."
+                Message = "Your version of Waitingway is outdated.\nPlease update to the latest version."
             });
 
             Context.Abort();
             return;
         }
-
+        
         if (!Guid.TryParse(packet.ClientId, out _))
         {
             _logger.LogInformation("disconnecting connection {}: invalid client id received {}",
                 Context.ConnectionId, packet.ClientId);
             await Send(new ServerGoodbye
             {
-                Message = "Your configuration is corrupt. Please delete your Waitingway configuration file."
+                Message = "Your configuration is corrupt.\nPlease delete your Waitingway configuration file."
             });
 
             Context.Abort();
@@ -78,6 +78,19 @@ public class WaitingwayHub : Hub
 
         _logger.LogInformation("connection {} identified as client {}", Context.ConnectionId, packet.ClientId);
         var client = new Client.Client {Id = packet.ClientId, PluginVersion = packet.PluginVersion};
+        if (!client.IsSupportedVersion)
+        {
+            _logger.LogInformation("disconnecting connection {}: using unsupported client version {}",
+                Context.ConnectionId, client.PluginVersion);
+            await Send(new ServerGoodbye
+            {
+                Message = "Your Waitingway version is no longer supported.\nPlease update your plugins! (╯°□°）╯︵ ┻━┻"
+            });
+
+            Context.Abort();
+            return;
+        }
+
         _clientManager.Add(Context.ConnectionId, client);
 
         await Send(new ServerHello());

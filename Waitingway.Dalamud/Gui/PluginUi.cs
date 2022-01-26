@@ -20,7 +20,7 @@ internal class PluginUi : IDisposable
         ConfigButtonOpenerWindow = new ConfigButtonOpenerWindow(this);
         ConfigWindow = new ConfigWindow(this);
 
-        SetStatusText("Waiting for server...");
+        SetStatusText("Waiting for server...", GuiText.GuiTextColor.White);
         Plugin.PluginInterface.UiBuilder.Draw += Draw;
     }
 
@@ -37,13 +37,13 @@ internal class PluginUi : IDisposable
         ConfigButtonOpenerWindow.Dispose();
     }
 
-    internal void SetStatusText(string status)
+    internal void SetStatusText(string status, GuiText.GuiTextColor color = GuiText.GuiTextColor.Red)
     {
         QueueText = new[]
         {
             new GuiText
             {
-                Color = GuiText.GuiTextColor.White,
+                Color = color,
                 Text = status
             }
         };

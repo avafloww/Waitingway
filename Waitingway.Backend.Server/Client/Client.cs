@@ -2,7 +2,8 @@
 
 public class Client
 {
-    public static Version LatestPluginVersion = new("1.2.0");
+    public static Version LatestPluginVersion = new("1.2.1");
+    public static Version OldestSupportedPluginVersion = new("1.2.1");
 
     public string Id { get; init; }
     private string _pluginVersion;
@@ -19,6 +20,21 @@ public class Client
     }
 
     public bool DiscordLinked { get; set; }
+
+    public bool IsSupportedVersion
+    {
+        get
+        {
+            try
+            {
+                return Version.Parse(PluginVersion) >= OldestSupportedPluginVersion;
+            }
+            catch
+            {
+                return true;
+            }
+        }
+    }
 
     public bool IsLatestVersion
     {

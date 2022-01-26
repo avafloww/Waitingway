@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Logging;
 using ImGuiNET;
+using Waitingway.Protocol.Serverbound;
 
 namespace Waitingway.Dalamud.Gui;
 
@@ -48,6 +48,14 @@ internal class ConfigWindow
                 DrawAdvancedTab();
                 ImGui.EndTabItem();
             }
+
+#if DEBUG
+            if (ImGui.BeginTabItem("Debug"))
+            {
+                DrawDebugTab();
+                ImGui.EndTabItem();
+            }
+#endif
 
             ImGui.EndTabBar();
         }
@@ -143,9 +151,50 @@ internal class ConfigWindow
 
         ImGui.Text("Remote Server Address:");
         ImGui.InputText("##remote_server", ref Config.RemoteServer, 256);
+        ImGui.SameLine();
+        if (ImGui.Button("Reset"))
+        {
+            Config.RemoteServer = Configuration.DefaultRemoteServer;
+        }
+
         ImGui.TextColored(ImGuiColors.DalamudGrey,
             "Changes to this setting will not take effect until the next restart.");
 
         EndTab();
     }
+
+#if DEBUG
+    private void DrawDebugTab()
+    {
+        StartTab();
+
+        ImGui.Checkbox("ForceShow LoginQueueWindow", ref _ui.LoginQueueWindow.ForceShow);
+        ImGui.Checkbox("Throw exceptions in hooks to test exception handling", ref _ui.Plugin.Hooks.ThrowInHooks);
+
+        var client = _ui.Plugin.Client;
+        if (client.RemoteUrl == Configuration.DefaultRemoteServer)
+        {
+            ImGui.Text("Server-related debug options are unavailable while pointing to the production server.");
+        }
+        else
+        {
+            if (ImGui.Button("Enter Login Queue"))
+            {
+                client.EnterLoginQueue();
+            }
+
+            if (ImGui.Button("Exit Queue"))
+            {
+                client.ExitQueue(QueueExit.QueueExitReason.UserCancellation);
+            }
+
+            if (ImGui.Button("Reset Login Queue"))
+            {
+                client.ResetLoginQueue(1234, 1234, 1234);
+            }
+        }
+
+        EndTab();
+    }
+#endif
 }

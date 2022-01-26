@@ -7,7 +7,8 @@ namespace Waitingway.Dalamud;
 
 public class Configuration : IPluginConfiguration
 {
-    public string RemoteServer = "https://etheirys.waitingway.com";
+    public const string DefaultRemoteServer = "https://etheirys.waitingway.com";
+    public string RemoteServer = DefaultRemoteServer;
     public string ClientId { get; init; } = Guid.NewGuid().ToString();
     public string ClientSalt { get; init; } = Guid.NewGuid().ToString().Split('-')[0];
     public int Version { get; set; } = 1;
