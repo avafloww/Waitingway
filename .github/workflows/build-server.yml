@@ -22,4 +22,4 @@ jobs:
           context: .
           file: ./Waitingway.Backend.Server/Dockerfile
           push: true
-          tags: avafloww/waitingway-server:latest
+          tags: ghcr.io/avafloww/waitingway-server:latest

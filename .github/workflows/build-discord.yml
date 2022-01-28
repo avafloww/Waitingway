@@ -22,4 +22,4 @@ jobs:
           context: .
           file: ./Waitingway.Backend.Discord/Dockerfile
           push: true
-          tags: avafloww/waitingway-discord:latest
+          tags: ghcr.io/avafloww/waitingway-discord:latest
