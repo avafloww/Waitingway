@@ -53,7 +53,7 @@ public class DiscordService
         {
             Title = "Client linked",
             Description =
-                "Your FFXIV client has been linked to your Discord account.\nYou will receive queue notification DMs from me when you use Waitingway.",
+                "Your FFXIV client has been linked to your Discord account.\nYou will receive queue notification DMs from me for significant queues (queues starting at 100 or more) when you use Waitingway.",
             Color = Color.Green,
             Timestamp = DateTimeOffset.UtcNow
         };
@@ -62,24 +62,6 @@ public class DiscordService
         await user.SendMessageAsync(embed: embed.Build());
 
         await SendLinkedLogMessage(linkInfo, user);
-    }
-
-    internal async Task SendQueueEntryMessage(ulong userId, ClientQueue queue)
-    {
-        var embed = new EmbedBuilder
-        {
-            Title = $":clock3: {queue.DbSession.SessionType} Queue Status",
-            Description =
-                $"**Position:** Unknown\n\n{MessageSuffix}",
-            Color = Color.Blue,
-            Timestamp = DateTimeOffset.UtcNow,
-            Footer = new EmbedFooterBuilder
-            {
-                Text = "Last updated"
-            }
-        };
-
-        await UpdateOrSendMessage(userId, embed.Build());
     }
 
     internal async Task SendQueueUpdateMessage(ulong userId, ClientQueue queue)

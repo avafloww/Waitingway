@@ -5,7 +5,10 @@ namespace Waitingway.Backend.Database.Queue;
 
 public class ClientQueue
 {
+    private uint _queueStartPosition;
     private uint _queuePosition;
+
+    public uint QueueStartPosition => _queueStartPosition;
 
     public uint QueuePosition
     {
@@ -13,6 +16,11 @@ public class ClientQueue
         set
         {
             _queuePosition = value;
+            if (value > 0 && _queueStartPosition == 0)
+            {
+                _queueStartPosition = value;
+            }
+
             LastUpdateReceived = DateTime.UtcNow;
         }
     }
@@ -21,7 +29,7 @@ public class ClientQueue
     public QueueSession DbSession { get; init; }
     public DateTime LastUpdateReceived { get; set; } = DateTime.UtcNow;
     public QueueSessionData.QueueEndReason? EndReason { get; set; }
-    
+
     public string ToJson()
     {
         return JsonConvert.SerializeObject(this);

@@ -73,11 +73,16 @@ public class QueueListenerService : IHostedService
             return;
         }
 
+        if (queue.QueueStartPosition < 100)
+        {
+            // don't nag the user for insignificant queues
+            // todo: make this a setting in the future
+            return;
+        }
+
         switch (eventType)
         {
             case QueueEventType.Enter:
-                await _discordService.SendQueueEntryMessage(user.DiscordUserId, queue);
-                break;
             case QueueEventType.Update:
                 await _discordService.SendQueueUpdateMessage(user.DiscordUserId, queue);
                 break;
@@ -105,25 +110,4 @@ public class QueueListenerService : IHostedService
             }
         }, new CacheSettings(TimeSpan.FromHours(2)));
     }
-
-    // private async Task<DiscordQueueMessage> GetPreviousQueueMessage(ClientQueue queue)
-    // {
-    //     try
-    //     {
-    //         var rc = _redis.GetDatabase();
-    //         if (rc == null)
-    //         {
-    //             _logger.LogError("Failed to obtain a Redis client!");
-    //             return 0;
-    //         }
-    //     
-    //         var value = await rc.StringGetAsync($"client:{clientId}:queue:discordMessageId");
-    //         return value.IsNullOrEmpty ? 0 : ulong.Parse(value);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         _logger.LogError(ex, "Error while getting previous message ID for client {}", clientId);
-    //         return 0;
-    //     }
-    // }
 }
