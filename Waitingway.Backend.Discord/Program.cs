@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using CacheTower;
 using CacheTower.Extensions;
@@ -22,6 +23,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // trust forwarding from Docker
+    options.KnownNetworks.Add(new IPNetwork(IPAddress.Parse("172.16.0.0"), 12));
 });
 
 // web shit
