@@ -1,0 +1,50 @@
+docker-build-server:
+  image: docker:latest
+  stage: build
+  only:
+    refs:
+      - branches
+    changes:
+      - Waitingway.Backend.Database/**
+      - Waitingway.Protocol/**
+      - Waitingway.Backend.Server/**
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        tag=""
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
+      else
+        tag=":$CI_COMMIT_REF_SLUG"
+        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      fi
+    - docker build --pull -f "Waitingway.Backend.Server/Dockerfile" -t "$CI_REGISTRY_IMAGE/server${tag}" .
+    - docker push "$CI_REGISTRY_IMAGE/server${tag}"
+docker-build-discord:
+  image: docker:latest
+  stage: build
+  only:
+    refs:
+      - branches
+    changes:
+      - Waitingway.Backend.Database/**
+      - Waitingway.Protocol/**
+      - Waitingway.Backend.Server/**
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - |
+      if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+        tag=""
+        echo "Running on default branch '$CI_DEFAULT_BRANCH': tag = 'latest'"
+      else
+        tag=":$CI_COMMIT_REF_SLUG"
+        echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+      fi
+    - docker build --pull -f "Waitingway.Backend.Discord/Dockerfile" -t "$CI_REGISTRY_IMAGE/discord${tag}" .
+    - docker push "$CI_REGISTRY_IMAGE/discord${tag}"
