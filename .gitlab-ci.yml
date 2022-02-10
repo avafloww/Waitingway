@@ -31,8 +31,7 @@ docker-build-discord:
       - branches
     changes:
       - Waitingway.Backend.Database/**
-      - Waitingway.Protocol/**
-      - Waitingway.Backend.Server/**
+      - Waitingway.Backend.Discord/**
   services:
     - docker:dind
   before_script:
