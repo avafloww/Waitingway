@@ -8,8 +8,14 @@ docker-build-server:
       - Waitingway.Backend.Database/**
       - Waitingway.Protocol/**
       - Waitingway.Backend.Server/**
+  variables:
+    DOCKER_HOST: tcp://docker:2375 
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
   services:
-    - docker:dind
+    - name: docker:20-dind
+      alias: docker
+      command: ["--tls=false"]
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
@@ -32,8 +38,14 @@ docker-build-discord:
     changes:
       - Waitingway.Backend.Database/**
       - Waitingway.Backend.Discord/**
+  variables:
+    DOCKER_HOST: tcp://docker:2375 
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
   services:
-    - docker:dind
+    - name: docker:20-dind
+      alias: docker
+      command: ["--tls=false"]
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
