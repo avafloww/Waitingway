@@ -31,10 +31,6 @@ public class Plugin : IDalamudPlugin
 
     [PluginService]
     [RequiredVersion("1.0")]
-    internal SigScanner SigScanner { get; init; }
-
-    [PluginService]
-    [RequiredVersion("1.0")]
     internal Framework Framework { get; init; }
 
     [PluginService]
@@ -63,7 +59,7 @@ public class Plugin : IDalamudPlugin
         Config.Save(); // save immediately in case we generated a new client ID
         PluginLog.Log($"Waitingway Client ID: {Config.ClientId}");
 
-        Hooks = new GameHooks(this, SigScanner!);
+        Hooks = new GameHooks(this);
         Client = new WaitingwayClient(this, Config.RemoteServer, Config.ClientId, PluginInterface.UiLanguage);
         IpcSystem = new IpcSystem(this);
 

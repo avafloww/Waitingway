@@ -1,10 +1,9 @@
 ﻿using System;
-using Dalamud.Game;
 using Dalamud.Hooking;
 using Dalamud.Logging;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Siggingway;
 using Waitingway.Dalamud.Network;
 using Waitingway.Dalamud.Structs;
 using Waitingway.Protocol.Serverbound;
@@ -35,10 +34,10 @@ public unsafe class GameHooks : IDisposable
     public bool ThrowInHooks = false;
 #endif
 
-    public GameHooks(Plugin plugin, SigScanner sigScanner)
+    public GameHooks(Plugin plugin)
     {
         Plugin = plugin;
-        Siggingway.Siggingway.Initialise(sigScanner, this);
+        SignatureHelper.Initialise(this);
 
         LobbyStatusHook.Enable();
         AgentLobbyVf0Hook.Enable();
