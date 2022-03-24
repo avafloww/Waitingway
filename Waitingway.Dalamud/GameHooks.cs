@@ -27,6 +27,8 @@ public unsafe class GameHooks : IDisposable
 
     public bool IsDisposed { get; private set; }
 
+    public int NativeUiQueueDelta { get; set; } = 0;
+
     private WaitingwayClient Client => Plugin.Client;
     private Plugin Plugin { get; }
 
@@ -79,8 +81,6 @@ public unsafe class GameHooks : IDisposable
             var lobbyStatus = (LobbyStatusUpdate*) a2.ToPointer();
             if (lobbyStatus->statusCode == LobbyStatusCode.WorldFull)
             {
-                PluginLog.Log(
-                    $"LobbyStatusUpdate: waiting in queue, queue length = {lobbyStatus->queueLength}");
                 if (lobbyStatus->queueLength < 0)
                 {
                     // "Character not properly logged off", skip
@@ -89,7 +89,14 @@ public unsafe class GameHooks : IDisposable
                 }
                 else
                 {
+                    PluginLog.Log(
+                        $"LobbyStatusUpdate: waiting in queue, queue length = {lobbyStatus->queueLength}");
                     Client.UpdateQueuePosition(lobbyStatus->queueLength);
+
+                    if (NativeUiQueueDelta != 0)
+                    {
+                        lobbyStatus->queueLength += NativeUiQueueDelta;
+                    }
                 }
             }
         }

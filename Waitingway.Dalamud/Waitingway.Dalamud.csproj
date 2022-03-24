@@ -6,10 +6,10 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Nullable>enable</Nullable>
-        <Version>1.2.1</Version>
-        <PackageVersion>1.2.1</PackageVersion>
-        <AssemblyVersion>1.2.1</AssemblyVersion>
-        <FileVersion>1.2.1</FileVersion>
+        <Version>1.2.2</Version>
+        <PackageVersion>1.2.2</PackageVersion>
+        <AssemblyVersion>1.2.2</AssemblyVersion>
+        <FileVersion>1.2.2</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup>

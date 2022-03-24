@@ -120,6 +120,7 @@ public class WaitingwayClient : IDisposable
         PluginLog.LogDebug("Received QueueStatusEstimate packet");
 #endif
         _plugin.Ui.QueueText = packet.LocalisedMessages;
+        _plugin.Hooks.NativeUiQueueDelta = packet.NativeUiQueueDelta;
         QueueEstimate = packet.EstimatedTime;
     }
 
