@@ -32,7 +32,7 @@ build-deploy-server:
     # deploy
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
-    - echo -n "$DEPLOY_SSH_KEY" | base64 --decode | ssh-add - >/dev/null
+    - echo -n "$DEPLOY_SSH_KEY" | base64 -d | ssh-add - >/dev/null
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
     - ssh "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "sudo /home/deploy/deploy-waitingway.sh server $CI_COMMIT_BRANCH"
 build-deploy-discord:
@@ -68,6 +68,6 @@ build-deploy-discord:
     # deploy
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
-    - echo -n "$DEPLOY_SSH_KEY" | base64 --decode | ssh-add - >/dev/null
+    - echo -n "$DEPLOY_SSH_KEY" | base64 -d | ssh-add - >/dev/null
     - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
     - ssh "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "sudo /home/deploy/deploy-waitingway.sh discord $CI_COMMIT_BRANCH"
