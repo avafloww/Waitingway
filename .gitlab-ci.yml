@@ -3,8 +3,7 @@ build-deploy-server:
   stage: build
   only:
     refs:
-      - main
-      - dev
+      - branches
     changes:
       - Waitingway.Backend.Database/**
       - Waitingway.Protocol/**
@@ -41,8 +40,7 @@ build-deploy-discord:
   stage: build
   only:
     refs:
-      - main
-      - dev
+      - branches
     changes:
       - Waitingway.Backend.Database/**
       - Waitingway.Backend.Discord/**
