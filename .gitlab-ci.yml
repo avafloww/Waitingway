@@ -1,9 +1,10 @@
-docker-build-server:
+build-deploy-server:
   image: docker:latest
   stage: build
   only:
     refs:
-      - branches
+      - main
+      - dev
     changes:
       - Waitingway.Backend.Database/**
       - Waitingway.Protocol/**
@@ -29,12 +30,19 @@ docker-build-server:
       fi
     - docker build --pull -f "Waitingway.Backend.Server/Dockerfile" -t "$CI_REGISTRY_IMAGE/server${tag}" .
     - docker push "$CI_REGISTRY_IMAGE/server${tag}"
-docker-build-discord:
+    # deploy
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - echo -n "$DEPLOY_SSH_KEY" | base64 --decode | ssh-add - >/dev/null
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - ssh "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "sudo /home/deploy/deploy-waitingway.sh server $CI_COMMIT_BRANCH"
+build-deploy-discord:
   image: docker:latest
   stage: build
   only:
     refs:
-      - branches
+      - main
+      - dev
     changes:
       - Waitingway.Backend.Database/**
       - Waitingway.Backend.Discord/**
@@ -59,3 +67,9 @@ docker-build-discord:
       fi
     - docker build --pull -f "Waitingway.Backend.Discord/Dockerfile" -t "$CI_REGISTRY_IMAGE/discord${tag}" .
     - docker push "$CI_REGISTRY_IMAGE/discord${tag}"
+    # deploy
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - echo -n "$DEPLOY_SSH_KEY" | base64 --decode | ssh-add - >/dev/null
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - ssh "$DEPLOY_SSH_USER@$DEPLOY_SSH_HOST" "sudo /home/deploy/deploy-waitingway.sh discord $CI_COMMIT_BRANCH"
