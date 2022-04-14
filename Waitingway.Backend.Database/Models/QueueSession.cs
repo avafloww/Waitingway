@@ -29,6 +29,8 @@ public class QueueSession
     [JsonIgnore] public List<QueueSessionData> DataPoints { get; set; }
 
     public string PluginVersion { get; set; }
+    
+    public string GameVersion { get; set; }
 
     public enum Type
     {

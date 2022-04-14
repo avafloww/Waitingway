@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Dalamud.Data;
 using Dalamud.Game;
 using Dalamud.Game.ClientState;
 using Dalamud.Game.Gui;
@@ -37,6 +38,9 @@ public class Plugin : IDalamudPlugin
     [RequiredVersion("1.0")]
     internal GameGui GameGui { get; init; }
 
+    [PluginService]
+    internal DataManager DataManager { get; init; }
+
     internal Configuration Config { get; }
     internal PluginUi Ui { get; }
     internal WaitingwayClient Client { get; }
@@ -60,7 +64,7 @@ public class Plugin : IDalamudPlugin
         PluginLog.Log($"Waitingway Client ID: {Config.ClientId}");
 
         Hooks = new GameHooks(this);
-        Client = new WaitingwayClient(this, Config.RemoteServer, Config.ClientId, PluginInterface.UiLanguage);
+        Client = new WaitingwayClient(this, DataManager.GameData.Repositories["ffxiv"].Version, Config.RemoteServer, Config.ClientId);
         IpcSystem = new IpcSystem(this);
 
         Ui = new PluginUi(this);
@@ -90,6 +94,7 @@ public class Plugin : IDalamudPlugin
         }
 
         var agentLobby = AgentLobby.Instance();
+
         if (agentLobby->SelectedCharacterId > 0 && agentLobby->SelectedCharacterId != Client.CharacterId)
         {
             // reset current login attempt
@@ -104,10 +109,12 @@ public class Plugin : IDalamudPlugin
         if (Client.InQueue)
         {
             var addon = GameGui.GetAddonByName("SelectOk", 1);
+
             if (addon != IntPtr.Zero)
             {
                 // if the "exit queue?" dialog is on screen, attach to that instead
                 var yesno = GameGui.GetAddonByName("SelectYesno", 1);
+
                 if (yesno != IntPtr.Zero)
                 {
                     addon = yesno;
@@ -118,6 +125,7 @@ public class Plugin : IDalamudPlugin
         }
 
         var charaSelectList = GameGui.GetAddonByName("_CharaSelectListMenu", 1);
+
         if (charaSelectList != IntPtr.Zero)
         {
             Ui.ConfigButtonOpenerWindow.SetDrawParams((AtkUnitBase*) charaSelectList);

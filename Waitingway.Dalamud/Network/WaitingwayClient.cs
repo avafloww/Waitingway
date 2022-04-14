@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Dalamud.Game;
 using Dalamud.Logging;
 using Microsoft.AspNetCore.SignalR.Client;
 using Waitingway.Protocol;
@@ -14,9 +15,9 @@ public class WaitingwayClient : IDisposable
 {
     private readonly Plugin _plugin;
     private readonly string _clientId;
+    private readonly string _gameVersion;
     private readonly HubConnection _connection;
     private readonly CancellationTokenSource _cancellationTokenSource;
-    private string _language;
 
     public string RemoteUrl { get; init; }
 
@@ -35,10 +36,11 @@ public class WaitingwayClient : IDisposable
 
     public bool InQueue => QueueEntryTime != null;
 
-    public WaitingwayClient(Plugin plugin, string serverUrl, string clientId, string language)
+    public WaitingwayClient(Plugin plugin, GameVersion gameVersion, string serverUrl, string clientId)
     {
         _plugin = plugin;
         _clientId = clientId;
+        _gameVersion = gameVersion.ToString();
 
         PluginLog.Log($"Remote server: {serverUrl}");
         RemoteUrl = serverUrl;
@@ -46,11 +48,8 @@ public class WaitingwayClient : IDisposable
             .WithUrl(serverUrl)
             .WithAutomaticReconnect(new InfiniteRetryPolicy())
             .Build();
-        _language = language;
 
         RegisterHandlers();
-
-        plugin.PluginInterface.LanguageChanged += LanguageChanged;
 
         _cancellationTokenSource = new CancellationTokenSource();
 
@@ -120,7 +119,6 @@ public class WaitingwayClient : IDisposable
         PluginLog.LogDebug("Received QueueStatusEstimate packet");
 #endif
         _plugin.Ui.QueueText = packet.LocalisedMessages;
-        _plugin.Hooks.NativeUiQueueDelta = packet.NativeUiQueueDelta;
         QueueEstimate = packet.EstimatedTime;
     }
 
@@ -160,15 +158,8 @@ public class WaitingwayClient : IDisposable
             ProtocolVersion = WaitingwayProtocol.Version,
             ClientId = _clientId,
             PluginVersion = _plugin.Version,
-            Language = _language
+            GameVersion = _gameVersion
         });
-    }
-
-    private void LanguageChanged(string newLanguage)
-    {
-        CheckDisposed();
-        _language = newLanguage;
-        Send(new ClientLanguageChange {Language = newLanguage});
     }
 
     internal void TryExitQueue(QueueExit.QueueExitReason reason)
@@ -265,8 +256,6 @@ public class WaitingwayClient : IDisposable
         IsDisposed = true;
 
         ResetQueue();
-
-        _plugin.PluginInterface.LanguageChanged -= LanguageChanged;
 
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();

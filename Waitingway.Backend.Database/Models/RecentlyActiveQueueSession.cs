@@ -12,6 +12,7 @@ public class RecentlyActiveQueueSession
     public int? World { get; set; }
     public int? DutyContentId { get; set; }
     public string PluginVersion { get; set; }
+    public string GameVersion { get; set; }
 
     /** QueueSessionData members */
     public DateTime Time { get; set; }

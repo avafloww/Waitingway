@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Waitingway.Backend.Database;
@@ -11,9 +12,10 @@ using Waitingway.Backend.Database;
 namespace Waitingway.Backend.Database.Migrations
 {
     [DbContext(typeof(WaitingwayContext))]
-    partial class WaitingwayContextModelSnapshot : ModelSnapshot
+    [Migration("20220414075718_AddGameVersionToQueueSessions")]
+    partial class AddGameVersionToQueueSessions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
