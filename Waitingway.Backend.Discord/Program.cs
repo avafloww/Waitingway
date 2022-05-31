@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
+using System.Net;
 using Waitingway.Backend.Database;
 using Waitingway.Backend.Database.Models;
 using Waitingway.Backend.Discord;

@@ -21,7 +21,7 @@ app.MapHub<WaitingwayHub>("");
 await using (var scope = app.Services.CreateAsyncScope())
 {
     // restore existing clients before we start accepting connections
-    await scope.ServiceProvider.GetRequiredService<ClientManager>().Restore();
+    scope.ServiceProvider.GetRequiredService<ClientManager>().Restore();
 }
 
 await app.RunAsync();

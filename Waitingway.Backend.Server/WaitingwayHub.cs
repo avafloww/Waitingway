@@ -77,7 +77,12 @@ public class WaitingwayHub : Hub
         }
 
         _logger.LogInformation("connection {} identified as client {}", Context.ConnectionId, packet.ClientId);
-        var client = new Client.Client {Id = packet.ClientId, PluginVersion = packet.PluginVersion};
+        var client = new Client.Client
+        {
+            Id = packet.ClientId,
+            PluginVersion = packet.PluginVersion,
+            GameVersion = packet.GameVersion
+        };
         if (!client.IsSupportedVersion)
         {
             _logger.LogInformation("disconnecting connection {}: using unsupported client version {}",
@@ -109,16 +114,6 @@ public class WaitingwayHub : Hub
         {
             _logger.LogWarning(ex, "[{}] RefreshDiscordLinkStatus: error", client.Id);
         }
-    }
-
-    public void ClientGoodbye(ClientGoodbye packet)
-    {
-        // todo: to be removed in a future protocol version, because we can't reliably send shit on game shutdown
-    }
-
-    public void ClientLanguageChange(ClientLanguageChange packet)
-    {
-        // todo: implement this
     }
 
     public async void LoginQueueEnter(LoginQueueEnter packet)

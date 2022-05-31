@@ -132,7 +132,8 @@ public class QueueManager
             DataCenter = packet.DatacenterId,
             World = packet.WorldId,
             SessionType = QueueSession.Type.Login,
-            PluginVersion = client.PluginVersion
+            PluginVersion = client.PluginVersion,
+            GameVersion = client.GameVersion
         };
 
         var sessionData = new QueueSessionData

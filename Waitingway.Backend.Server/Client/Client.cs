@@ -8,6 +8,8 @@ public class Client
     public string Id { get; init; }
     private string _pluginVersion;
 
+    public string GameVersion { get; init; }
+
     public string PluginVersion
     {
         get => _pluginVersion;

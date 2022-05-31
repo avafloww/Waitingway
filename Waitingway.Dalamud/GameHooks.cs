@@ -1,10 +1,9 @@
 ﻿using System;
-using Dalamud.Game;
 using Dalamud.Hooking;
 using Dalamud.Logging;
+using Dalamud.Utility.Signatures;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
-using Siggingway;
 using Waitingway.Dalamud.Network;
 using Waitingway.Dalamud.Structs;
 using Waitingway.Protocol.Serverbound;
@@ -28,6 +27,8 @@ public unsafe class GameHooks : IDisposable
 
     public bool IsDisposed { get; private set; }
 
+    public int NativeUiQueueDelta { get; set; } = 0;
+
     private WaitingwayClient Client => Plugin.Client;
     private Plugin Plugin { get; }
 
@@ -35,10 +36,10 @@ public unsafe class GameHooks : IDisposable
     public bool ThrowInHooks = false;
 #endif
 
-    public GameHooks(Plugin plugin, SigScanner sigScanner)
+    public GameHooks(Plugin plugin)
     {
         Plugin = plugin;
-        Siggingway.Siggingway.Initialise(sigScanner, this);
+        SignatureHelper.Initialise(this);
 
         LobbyStatusHook.Enable();
         AgentLobbyVf0Hook.Enable();
@@ -80,8 +81,6 @@ public unsafe class GameHooks : IDisposable
             var lobbyStatus = (LobbyStatusUpdate*) a2.ToPointer();
             if (lobbyStatus->statusCode == LobbyStatusCode.WorldFull)
             {
-                PluginLog.Log(
-                    $"LobbyStatusUpdate: waiting in queue, queue length = {lobbyStatus->queueLength}");
                 if (lobbyStatus->queueLength < 0)
                 {
                     // "Character not properly logged off", skip
@@ -90,7 +89,14 @@ public unsafe class GameHooks : IDisposable
                 }
                 else
                 {
+                    PluginLog.Log(
+                        $"LobbyStatusUpdate: waiting in queue, queue length = {lobbyStatus->queueLength}");
                     Client.UpdateQueuePosition(lobbyStatus->queueLength);
+
+                    if (NativeUiQueueDelta != 0)
+                    {
+                        lobbyStatus->queueLength += NativeUiQueueDelta;
+                    }
                 }
             }
         }

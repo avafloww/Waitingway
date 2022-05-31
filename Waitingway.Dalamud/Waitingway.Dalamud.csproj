@@ -6,10 +6,10 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <Nullable>enable</Nullable>
-        <Version>1.2.1</Version>
-        <PackageVersion>1.2.1</PackageVersion>
-        <AssemblyVersion>1.2.1</AssemblyVersion>
-        <FileVersion>1.2.1</FileVersion>
+        <Version>1.2.3</Version>
+        <PackageVersion>1.2.3</PackageVersion>
+        <AssemblyVersion>1.2.3</AssemblyVersion>
+        <FileVersion>1.2.3</FileVersion>
     </PropertyGroup>
 
     <PropertyGroup>
@@ -18,9 +18,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="2.1.5" />
+        <PackageReference Include="DalamudPackager" Version="2.1.6" />
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.1" />
-        <PackageReference Include="Siggingway" Version="1.1.0" />
     </ItemGroup>
 
     <ItemGroup>
