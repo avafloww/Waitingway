@@ -10,9 +10,7 @@ public class WaitingwayContext : DbContext
     public DbSet<RecentlyActiveQueueSession> RecentlyActiveQueueSessions { get; set; }
     public DbSet<DiscordLinkInfo> DiscordLinkInfo { get; set; }
 
-    public WaitingwayContext(DbContextOptions options) : base(options)
-    {
-    }
+    public WaitingwayContext(DbContextOptions options) : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
