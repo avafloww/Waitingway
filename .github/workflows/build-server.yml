@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - 'main'
+    paths:
+      - 'Waitingway.Protocol/**'
+      - 'Waitingway.Backend.Server/**'
+      - 'Waitingway.Backend.Database/**'
 
 jobs:
   docker:
@@ -23,3 +27,12 @@ jobs:
           file: ./Waitingway.Backend.Server/Dockerfile
           push: true
           tags: ghcr.io/avafloww/waitingway-server:latest
+      - name: Deploy to production server
+        uses: appleboy/ssh-action@v0.1.4
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          port: ${{ secrets.REMOTE_PORT }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_SSH_KEY }}
+          # todo: update if we ever care about supporting a staging env
+          script: sudo /home/deploy/deploy-waitingway.sh server main
