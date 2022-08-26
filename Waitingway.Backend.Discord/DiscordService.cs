@@ -158,7 +158,7 @@ public class DiscordService
 
         await _messageCache.SetAsync(
             $"discord:{userId}:queueMessage",
-            new CacheEntry<DiscordQueueMessage>(new DiscordQueueMessage(message.Id), TimeSpan.FromMinutes(15))
+            new CacheEntry<DiscordQueueMessage>(new DiscordQueueMessage(message.Id), DateTimeOffset.UtcNow.DateTime.AddMinutes(15))
         );
 
         return user;
