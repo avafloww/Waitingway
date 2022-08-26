@@ -2,6 +2,7 @@
     
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
@@ -11,11 +12,17 @@
         <ProjectReference Include="..\Waitingway.Backend.Database\Waitingway.Backend.Database.csproj" />
     </ItemGroup>
 
+    <PropertyGroup>
+        <NoWarn>CS8604, CS8618</NoWarn>
+    </PropertyGroup>
+
     <ItemGroup>
-      <PackageReference Include="CacheTower" Version="0.11.6" />
-      <PackageReference Include="CacheTower.Providers.Redis" Version="0.11.6" />
-      <PackageReference Include="Discord.Net" Version="3.2.0" />
-      <PackageReference Include="Discord.OAuth2.AspNetCore" Version="3.0.0" />
-      <PackageReference Include="StackExchange.Redis" Version="2.2.88" />
+        <PackageReference Include="CacheTower" Version="0.13.0" />
+        <PackageReference Include="CacheTower.Providers.Redis" Version="0.13.0" />
+        <PackageReference Include="CacheTower.Serializers.Protobuf" Version="0.13.0" />
+        <PackageReference Include="Discord.Net" Version="3.7.2" />
+        <PackageReference Include="Discord.OAuth2.AspNetCore" Version="3.0.0" />
+        <PackageReference Include="StackExchange.Redis" Version="2.6.48" />
     </ItemGroup>
+
 </Project>
