@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Authors>Avaflow</Authors>
-        <Version>1.2.3</Version>
+        <Version>1.2.4</Version>
         <Description>Crowdsourced FFXIV login queue times, now with Discord queue notification features.</Description>
         <PackageProjectUrl>https://github.com/avafloww/Waitingway</PackageProjectUrl>
     </PropertyGroup>
@@ -9,6 +9,7 @@
     <PropertyGroup>
         <TargetFramework>net6.0-windows</TargetFramework>
         <Platforms>x64</Platforms>
+        <PlatformTarget>x64</PlatformTarget>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -33,7 +34,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DalamudPackager" Version="2.1.8" />
+        <PackageReference Include="DalamudPackager" Version="2.1.8">
+            <IncludeAssets>build</IncludeAssets>
+        </PackageReference>
         <Reference Include="FFXIVClientStructs">
             <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
             <Private>false</Private>
@@ -69,7 +72,7 @@
             <Private>false</Private>
             <IncludeAssets>compile</IncludeAssets>
         </Reference>
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="7.0.0" />
         <ProjectReference Include="..\Waitingway.Protocol\Waitingway.Protocol.csproj" />
     </ItemGroup>
 
