@@ -1,8 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using ProtoBuf;
 
 namespace Waitingway.Backend.Database.Models;
 
+[Table("DiscordLinkInfo", Schema = "waitingway")]
 [ProtoContract]
 public class DiscordLinkInfo
 {

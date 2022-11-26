@@ -4,6 +4,7 @@ using CacheTower;
 using CacheTower.Extensions;
 using CacheTower.Providers.Memory;
 using CacheTower.Providers.Redis;
+using CacheTower.Serializers.Protobuf;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
@@ -11,7 +12,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
-using System.Net;
 using Waitingway.Backend.Database;
 using Waitingway.Backend.Database.Models;
 using Waitingway.Backend.Discord;
@@ -49,28 +49,16 @@ if (redis == null)
 builder.Services.AddSingleton<ConnectionMultiplexer>(_ => redis);
 
 // caching
-builder.Services.AddCacheStack<DiscordLinkInfo>(
-    new ICacheLayer[]
-    {
-        new MemoryCacheLayer(),
-        new RedisCacheLayer(redis)
-    },
-    new ICacheExtension[]
-    {
-        new AutoCleanupExtension(TimeSpan.FromMinutes(30))
-    }
+builder.Services.AddCacheStack<DiscordLinkInfo>((provider, builder) => builder
+    .AddMemoryCacheLayer()
+    .AddRedisCacheLayer(redis, new RedisCacheLayerOptions(ProtobufCacheSerializer.Instance))
+    .WithCleanupFrequency(TimeSpan.FromMinutes(30))
 );
 
-builder.Services.AddCacheStack<DiscordQueueMessage>(
-    new ICacheLayer[]
-    {
-        new MemoryCacheLayer(),
-        new RedisCacheLayer(redis)
-    },
-    new ICacheExtension[]
-    {
-        new AutoCleanupExtension(TimeSpan.FromMinutes(30))
-    }
+builder.Services.AddCacheStack<DiscordQueueMessage>((provider, builder) => builder
+    .AddMemoryCacheLayer()
+    .AddRedisCacheLayer(redis, new RedisCacheLayerOptions(ProtobufCacheSerializer.Instance))
+    .WithCleanupFrequency(TimeSpan.FromMinutes(30))
 );
 
 // spin up the config

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Waitingway.Backend.Database.Models;
 
+[Table("QueueSessionData", Schema = "waitingway")]
 [Index(nameof(Time), nameof(Type))]
 public class QueueSessionData
 {

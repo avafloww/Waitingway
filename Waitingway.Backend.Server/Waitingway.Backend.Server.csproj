@@ -2,18 +2,20 @@
 
     <PropertyGroup>
         <TargetFramework>net6.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Waitingway.Backend.Database\Waitingway.Backend.Database.csproj" />
-      <ProjectReference Include="..\Waitingway.Protocol\Waitingway.Protocol.csproj" />
-    </ItemGroup>
+    <PropertyGroup>
+        <NoWarn>CS8604, CS8618</NoWarn>
+    </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="StackExchange.Redis" Version="2.2.88" />
+      <PackageReference Include="StackExchange.Redis" Version="2.6.48" />
+      <ProjectReference Include="..\Waitingway.Backend.Database\Waitingway.Backend.Database.csproj" />
+      <ProjectReference Include="..\Waitingway.Protocol\Waitingway.Protocol.csproj" />
     </ItemGroup>
 
 </Project>

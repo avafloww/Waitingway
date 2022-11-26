@@ -1,5 +1,8 @@
-﻿namespace Waitingway.Backend.Database.Models;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
+namespace Waitingway.Backend.Database.Models;
+
+[Table("RecentlyActiveQueueSession", Schema = "waitingway")]
 public class RecentlyActiveQueueSession
 {
     /** QueueSession members */

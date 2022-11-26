@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 
 namespace Waitingway.Backend.Database.Models;
 
+[Table("QueueSessions", Schema = "waitingway")]
 [Index(nameof(DataCenter), nameof(World))]
 public class QueueSession
 {
