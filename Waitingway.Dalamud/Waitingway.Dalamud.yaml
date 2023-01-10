@@ -1,5 +1,5 @@
 name: Waitingway
-author: Avaflow
+author: Avaflow, NPittinger
 punchline: Crowdsourced FFXIV login queue times, now with Discord queue notification features.
 description: |-
   Contributes and utilizes crowdsourced login queue information for the benefit of everyone.
@@ -15,5 +15,3 @@ description: |-
 category_tags:
   - utility
 repo_url: https://github.com/avafloww/Waitingway
-changelog: |-
-  Updated for Dalamud API 7

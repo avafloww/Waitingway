@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -20,9 +20,9 @@
         <PackageReference Include="CacheTower" Version="0.13.0" />
         <PackageReference Include="CacheTower.Providers.Redis" Version="0.13.0" />
         <PackageReference Include="CacheTower.Serializers.Protobuf" Version="0.13.0" />
-        <PackageReference Include="Discord.Net" Version="3.7.2" />
+        <PackageReference Include="Discord.Net" Version="3.9.0" />
         <PackageReference Include="Discord.OAuth2.AspNetCore" Version="3.0.0" />
-        <PackageReference Include="StackExchange.Redis" Version="2.6.48" />
+        <PackageReference Include="StackExchange.Redis" Version="2.6.86" />
     </ItemGroup>
 
 </Project>

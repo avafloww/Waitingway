@@ -38,5 +38,6 @@ public class IpcSystem : IDisposable
         _cgGetQueueType.UnregisterFunc();
         _cgGetQueuePosition.UnregisterFunc();
         _cgGetQueueEstimate.UnregisterFunc();
+        GC.SuppressFinalize(this);
     }
 }
