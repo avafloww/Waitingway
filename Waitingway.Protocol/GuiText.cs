@@ -14,20 +14,14 @@ public class GuiText
 
     public Vector4 ColorAsVec()
     {
-        switch (Color)
+        return Color switch
         {
-            case GuiTextColor.Green:
-                return new(0.117f, 1f, 0f, 1f);
-            case GuiTextColor.Yellow:
-                return new(1f, 1f, .4f, 1f);
-            case GuiTextColor.Red:
-                return new(1f, 0f, 0f, 1f);
-            case GuiTextColor.Grey:
-                return new(0.7f, 0.7f, 0.7f, 1f);
-            case GuiTextColor.White:
-            default:
-                return new(1f, 1f, 1f, 1f);
-        }
+            GuiTextColor.Green => new(0.117f, 1f, 0f, 1f),
+            GuiTextColor.Yellow => new(1f, 1f, .4f, 1f),
+            GuiTextColor.Red => new(1f, 0f, 0f, 1f),
+            GuiTextColor.Grey => new(0.7f, 0.7f, 0.7f, 1f),
+            _ => new(1f, 1f, 1f, 1f),
+        };
     }
 
     public enum GuiTextColor

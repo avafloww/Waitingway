@@ -261,6 +261,8 @@ public class WaitingwayClient : IDisposable
         _cancellationTokenSource.Dispose();
 
         _connection.DisposeAsync();
+
+        GC.SuppressFinalize(this);
     }
 
     public void Send(IPacket packet)
@@ -285,7 +287,7 @@ public class WaitingwayClient : IDisposable
 #endif
             await _connection.InvokeAsync(packet.GetType().Name, packet);
         }
-        catch (TaskCanceledException ex)
+        catch (TaskCanceledException)
         {
             PluginLog.Warning($"SendAsync for {packet.GetType().Name} was cancelled, backing away");
         }
