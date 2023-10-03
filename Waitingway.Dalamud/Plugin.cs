@@ -1,12 +1,7 @@
-﻿using System;
+﻿﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Dalamud.Data;
-using Dalamud.Game;
-using Dalamud.Game.ClientState;
-using Dalamud.Game.Gui;
 using Dalamud.IoC;
-using Dalamud.Logging;
 using Dalamud.Plugin;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -14,6 +9,7 @@ using Waitingway.Dalamud.Network;
 using Waitingway.Dalamud.Gui;
 using Waitingway.Dalamud.Handler;
 using Waitingway.Protocol.Serverbound;
+using Dalamud.Plugin.Services;
 
 namespace Waitingway.Dalamud;
 
@@ -23,23 +19,25 @@ public class Plugin : IDalamudPlugin
     public string Version { get; }
 
     [PluginService]
-    [RequiredVersion("1.0")]
     internal DalamudPluginInterface PluginInterface { get; init; }
 
     [PluginService]
-    [RequiredVersion("1.0")]
-    internal ClientState ClientState { get; init; }
+    internal IClientState ClientState { get; init; }
 
     [PluginService]
-    [RequiredVersion("1.0")]
-    internal Framework Framework { get; init; }
+    internal IDataManager DataManager { get; init; }
 
     [PluginService]
-    [RequiredVersion("1.0")]
-    internal GameGui GameGui { get; init; }
+    internal IFramework Framework { get; init; }
 
     [PluginService]
-    internal DataManager DataManager { get; init; }
+    internal IGameGui GameGui { get; init; }
+
+    [PluginService]
+    internal IGameInteropProvider GameInteropProvider { get; init; }
+
+    [PluginService]
+    internal IPluginLog PluginLog { get; init; }
 
     internal Configuration Config { get; }
     internal PluginUi Ui { get; }
@@ -61,7 +59,7 @@ public class Plugin : IDalamudPlugin
         Config = PluginInterface!.GetPluginConfig() as Configuration ?? new Configuration();
         Config.Initialize(PluginInterface);
         Config.Save(); // save immediately in case we generated a new client ID
-        PluginLog.Log($"Waitingway Client ID: {Config.ClientId}");
+        PluginLog.Information($"Waitingway Client ID: {Config.ClientId}");
 
         Hooks = new GameHooks(this);
         Client = new WaitingwayClient(this, DataManager.GameData.Repositories["ffxiv"].Version, Config.RemoteServer, Config.ClientId);
@@ -85,7 +83,7 @@ public class Plugin : IDalamudPlugin
         return !ClientState.IsLoggedIn && Client.InQueue;
     }
 
-    private unsafe void OnFrameworkUpdate(Framework framework)
+    private unsafe void OnFrameworkUpdate(IFramework framework)
     {
         if (ClientState.IsLoggedIn)
         {
@@ -95,11 +93,11 @@ public class Plugin : IDalamudPlugin
 
         var agentLobby = AgentLobby.Instance();
 
-        if (agentLobby->SelectedCharacterId > 0 && agentLobby->SelectedCharacterId != Client.CharacterId)
+        if (agentLobby->SelectedCharacterContentId > 0 && agentLobby->SelectedCharacterContentId != Client.CharacterId)
         {
             // reset current login attempt
             Client.ResetLoginQueue(
-                agentLobby->SelectedCharacterId,
+                agentLobby->SelectedCharacterContentId,
                 agentLobby->DataCenter,
                 agentLobby->WorldId
             );
@@ -132,9 +130,9 @@ public class Plugin : IDalamudPlugin
         }
     }
 
-    private void HandleLogout(object? sender, EventArgs eventArgs)
+    private void HandleLogout()
     {
-        PluginLog.Debug($"HandleLogout: sender = {sender}, eventArgs = {eventArgs}");
+        PluginLog.Debug($"HandleLogout");
         // just in case... cancel any outstanding queues
         Client.TryExitQueue(QueueExit.QueueExitReason.UserCancellation);
     }

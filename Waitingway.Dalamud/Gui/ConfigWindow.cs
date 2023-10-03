@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
-using Dalamud.Interface;
 using Dalamud.Interface.Colors;
-using Dalamud.Logging;
+using Dalamud.Interface.Utility;
 using ImGuiNET;
 using Waitingway.Protocol.Serverbound;
 
@@ -129,7 +128,7 @@ internal class ConfigWindow
             }
             catch (Exception ex)
             {
-                PluginLog.Warning(ex, "Failed to open browser to link Discord");
+                _ui.Plugin.PluginLog.Warning(ex, "Failed to open browser to link Discord");
             }
         }
 

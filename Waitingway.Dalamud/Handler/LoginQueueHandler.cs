@@ -1,5 +1,4 @@
 ﻿using System;
-using Dalamud.Logging;
 using Waitingway.Dalamud.Network;
 using Waitingway.Protocol.Serverbound;
 
@@ -16,13 +15,13 @@ internal class LoginQueueHandler : IDisposable
         plugin.ClientState.Login += HandleLogin;
     }
 
-    private void HandleLogin(object? sender, EventArgs eventArgs)
+    private void HandleLogin()
     {
-        PluginLog.Debug($"HandleLogin: sender = {sender}, eventArgs = {eventArgs}");
+        Plugin.PluginLog.Debug($"HandleLogin");
         if (Client.InQueue)
         {
             var duration = DateTime.Now - Client.QueueEntryTime;
-            PluginLog.Log($"Login queue took {duration}");
+            Plugin.PluginLog.Information($"Login queue took {duration}");
             Client.ExitQueue(QueueExit.QueueExitReason.Success);
         }
     }

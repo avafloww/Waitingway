@@ -4,6 +4,7 @@ using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility;
 using Dalamud.Logging;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
@@ -75,7 +76,7 @@ internal class LoginQueueWindow
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.LogError($"Failed to open website: {ex}");
+                    _ui.Plugin.PluginLog.Error($"Failed to open website: {ex}");
                 }
             }
 
@@ -93,7 +94,7 @@ internal class LoginQueueWindow
                 }
                 catch (Exception ex)
                 {
-                    PluginLog.LogError($"Failed to open website: {ex}");
+                    _ui.Plugin.PluginLog.Error($"Failed to open website: {ex}");
                 }
             }
 
