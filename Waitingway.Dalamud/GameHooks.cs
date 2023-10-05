@@ -1,13 +1,12 @@
 ﻿using System;
 using Dalamud.Hooking;
-using Dalamud.Logging;
 using Dalamud.Utility.Signatures;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Waitingway.Dalamud.Network;
 using Waitingway.Dalamud.Structs;
 using Waitingway.Protocol.Serverbound;
 using ValueType = FFXIVClientStructs.FFXIV.Component.GUI.ValueType;
+using AgentLobby = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentLobby;
 
 namespace Waitingway.Dalamud;
 
@@ -18,7 +17,9 @@ public unsafe class GameHooks : IDisposable
         DetourName = nameof(LobbyStatusUpdateDetour))]
     private Hook<OnLobbyErrorCode> LobbyStatusHook { get; init; } = null!;
 
-    [Signature("40 55 56 57 41 54 41 55 48 8D AC 24 ?? ?? ?? ??", DetourName = nameof(AgentLobbyVf0Detour))]
+    [Signature(
+        "40 55 57 41 54 41 55 41 56 48 8D AC 24 ?? ?? ?? ?? 48 81 EC ?? ?? ?? ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 85 ?? ?? ?? ?? 4C 8B EA",
+        DetourName = nameof(AgentLobbyVf0Detour))]
     private Hook<AgentLobbyVf0> AgentLobbyVf0Hook { get; init; } = null!;
 
     private delegate IntPtr OnLobbyErrorCode(IntPtr a1, IntPtr a2);
@@ -39,7 +40,7 @@ public unsafe class GameHooks : IDisposable
     public GameHooks(Plugin plugin)
     {
         Plugin = plugin;
-        SignatureHelper.Initialise(this);
+        Plugin.GameInteropProvider.InitializeFromAttributes(this);
 
         LobbyStatusHook.Enable();
         AgentLobbyVf0Hook.Enable();
@@ -84,12 +85,12 @@ public unsafe class GameHooks : IDisposable
                 if (lobbyStatus->queueLength < 0)
                 {
                     // "Character not properly logged off", skip
-                    PluginLog.LogWarning(
+                    Plugin.PluginLog.Warning(
                         "LobbyStatusUpdate: invalid queue length (character still logged in?), not sending update to server");
                 }
                 else
                 {
-                    PluginLog.Log(
+                    Plugin.PluginLog.Information(
                         $"LobbyStatusUpdate: waiting in queue, queue length = {lobbyStatus->queueLength}");
                     Client.UpdateQueuePosition(lobbyStatus->queueLength);
 
@@ -102,7 +103,7 @@ public unsafe class GameHooks : IDisposable
         }
         catch (Exception ex)
         {
-            PluginLog.Log($"Exception in LobbyStatusUpdateDetour: {ex}");
+            Plugin.PluginLog.Information($"Exception in LobbyStatusUpdateDetour: {ex}");
         }
 
         return LobbyStatusHook.Original(a1, a2);
@@ -125,13 +126,13 @@ public unsafe class GameHooks : IDisposable
             // don't crash the game if something funky is going on
             if (value == null)
             {
-                PluginLog.LogWarning("AgentLobbyVf0Detour: AtkValue ptr is null?");
+                Plugin.PluginLog.Warning("AgentLobbyVf0Detour: AtkValue ptr is null?");
                 return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
             }
 
             if (value->Type != ValueType.Int && value->Type != ValueType.UInt)
             {
-                PluginLog.LogWarning($"AgentLobbyVf0Detour: AtkValue type was unexpected ({value->Type})?");
+                Plugin.PluginLog.Warning($"AgentLobbyVf0Detour: AtkValue type was unexpected ({value->Type})?");
                 return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);
             }
 
@@ -143,14 +144,14 @@ public unsafe class GameHooks : IDisposable
                 }
                 else if (action == 0x22) // cancel login queue
                 {
-                    PluginLog.Log("Sending QueueExit due to user cancellation of login queue");
+                    Plugin.PluginLog.Information("Sending QueueExit due to user cancellation of login queue");
                     Client.ExitQueue(QueueExit.QueueExitReason.UserCancellation);
                 }
             }
         }
         catch (Exception ex)
         {
-            PluginLog.LogError($"Exception in AgentLobbyVf0Detour: {ex}");
+            Plugin.PluginLog.Error($"Exception in AgentLobbyVf0Detour: {ex}");
         }
 
         return AgentLobbyVf0Hook.Original(agent, a2, value, a4, action);

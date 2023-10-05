@@ -1,17 +1,17 @@
 ﻿using System;
 using System.IO;
 using System.Numerics;
-using Dalamud.Interface;
+using Dalamud.Interface.Internal;
+using Dalamud.Interface.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using ImGuiNET;
-using ImGuiScene;
 
 namespace Waitingway.Dalamud.Gui;
 
 internal class ConfigButtonOpenerWindow : IDisposable
 {
     private readonly PluginUi _ui;
-    private readonly TextureWrap _icon;
+    private readonly IDalamudTextureWrap _icon;
     private float _posX;
     private float _posY;
     private float _width = 36;
@@ -91,7 +91,7 @@ internal class ConfigButtonOpenerWindow : IDisposable
         var backupBtn = charaSelectList->UldManager.SearchNodeById(6);
         var worldBtn = charaSelectList->UldManager.SearchNodeById(4);
 
-        // PluginLog.Log($"HasAdjustedNativeUi: {HasAdjustedNativeUi()}; worldBtn->Width: {worldBtn->Width}; _worldBtnTargetWidth: {_worldBtnTargetWidth}");
+        // _ui.Plugin.PluginLog.Information($"HasAdjustedNativeUi: {HasAdjustedNativeUi()}; worldBtn->Width: {worldBtn->Width}; _worldBtnTargetWidth: {_worldBtnTargetWidth}");
         if (!HasAdjustedNativeUi() || worldBtn->Width != _worldBtnTargetWidth)
         {
             // move the buttons to make a little more room

@@ -1,9 +1,7 @@
-﻿using System;
+﻿﻿using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Dalamud.Game;
-using Dalamud.Logging;
 using Microsoft.AspNetCore.SignalR.Client;
 using Waitingway.Protocol;
 using Waitingway.Protocol.Clientbound;
@@ -36,13 +34,13 @@ public class WaitingwayClient : IDisposable
 
     public bool InQueue => QueueEntryTime != null;
 
-    public WaitingwayClient(Plugin plugin, GameVersion gameVersion, string serverUrl, string clientId)
+    public WaitingwayClient(Plugin plugin, string gameVersion, string serverUrl, string clientId)
     {
         _plugin = plugin;
         _clientId = clientId;
         _gameVersion = gameVersion.ToString();
 
-        PluginLog.Log($"Remote server: {serverUrl}");
+        _plugin.PluginLog.Information($"Remote server: {serverUrl}");
         RemoteUrl = serverUrl;
         _connection = new HubConnectionBuilder()
             .WithUrl(serverUrl)
@@ -62,14 +60,14 @@ public class WaitingwayClient : IDisposable
 
     private async Task EstablishInitialConnection(CancellationToken cancellationToken)
     {
-        PluginLog.Log("Attempting to connect to remote server.");
+        _plugin.PluginLog.Information("Attempting to connect to remote server.");
 
         while (true)
         {
             try
             {
                 await _connection.StartAsync(cancellationToken);
-                PluginLog.Log("Connected to server.");
+                _plugin.PluginLog.Information("Connected to server.");
                 await SendHello();
             }
             catch when (cancellationToken.IsCancellationRequested)
@@ -95,7 +93,7 @@ public class WaitingwayClient : IDisposable
     {
         CheckDisposed();
 #if DEBUG
-        PluginLog.LogDebug("Received ServerHello packet");
+        _plugin.PluginLog.Debug("Received ServerHello packet");
 #endif
     }
 
@@ -103,7 +101,7 @@ public class WaitingwayClient : IDisposable
     {
         CheckDisposed();
 #if DEBUG
-        PluginLog.LogDebug("Received ServerGoodbye packet");
+        _plugin.PluginLog.Debug("Received ServerGoodbye packet");
 #endif
         _goodbye = packet;
         if (packet.Message != null)
@@ -116,7 +114,7 @@ public class WaitingwayClient : IDisposable
     {
         CheckDisposed();
 #if DEBUG
-        PluginLog.LogDebug("Received QueueStatusEstimate packet");
+        _plugin.PluginLog.Debug("Received QueueStatusEstimate packet");
 #endif
         _plugin.Ui.QueueText = packet.LocalisedMessages;
         QueueEstimate = packet.EstimatedTime;
@@ -125,14 +123,14 @@ public class WaitingwayClient : IDisposable
     private async Task OnReconnect(string? _)
     {
         CheckDisposed();
-        PluginLog.Log("Reconnected to server.");
+        _plugin.PluginLog.Information("Reconnected to server.");
         await SendHello();
     }
 
     private Task OnDisconnect(Exception? ex)
     {
         CheckDisposed();
-        PluginLog.Log($"Disconnected from server. {ex}");
+        _plugin.PluginLog.Debug($"Disconnected from server. {ex}");
 
         if (_goodbye == null)
         {
@@ -276,24 +274,24 @@ public class WaitingwayClient : IDisposable
 
         if (!Connected)
         {
-            PluginLog.Warning($"Not connected to server, skipping send of {packet.GetType().Name} packet");
+            _plugin.PluginLog.Warning($"Not connected to server, skipping send of {packet.GetType().Name} packet");
             return;
         }
 
         try
         {
 #if DEBUG
-            PluginLog.LogDebug($"Sending {packet.GetType().Name} packet");
+            _plugin.PluginLog.Debug($"Sending {packet.GetType().Name} packet");
 #endif
             await _connection.InvokeAsync(packet.GetType().Name, packet);
         }
         catch (TaskCanceledException)
         {
-            PluginLog.Warning($"SendAsync for {packet.GetType().Name} was cancelled, backing away");
+            _plugin.PluginLog.Warning($"SendAsync for {packet.GetType().Name} was cancelled, backing away");
         }
         catch (Exception ex)
         {
-            PluginLog.Log($"Error while sending packet to server: {ex}");
+            _plugin.PluginLog.Information($"Error while sending packet to server: {ex}");
         }
     }
 }
